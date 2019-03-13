@@ -2,7 +2,7 @@
 # Each line is a file pattern followed by one or more owners
 # Ref: https://help.github.com/articles/about-code-owners
 
-# Default owners for everything in the repo
-*  @flybits/devops @flybits/backend
+# Default owners for everything in the repo (primary and secondary champions)
+*  @moorara
 
 # Actions
