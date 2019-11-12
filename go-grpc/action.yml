@@ -1,0 +1,17 @@
+name: Go gRPC
+author: Milad Irannejad
+description: GitHub Action for Go applications with gRPC tools.
+inputs:
+  path:
+    description: The root path to the project.
+    required: false
+    default: .
+  command:
+    description: A bash script to be run.
+    required: true
+runs:
+  using: docker
+  image: Dockerfile
+branding:
+  icon: code
+  color: blue
