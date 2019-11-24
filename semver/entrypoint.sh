@@ -38,7 +38,7 @@ update_text_file() {
   echo "$semver"
 
   if [[ "$INPUT_FILE" == *.json ]]; then
-    sed -i "" -e "s/\\"version\\": \\"[0-9.-]\\"/\\"version\\": \\"$semver\\"/g" "$INPUT_FILE"
+    sed -i -e "s/\\\"version\\\": \\\"[0-9.-]*\\\"/\\\"version\\\": \\\"$semver\\\"/g" "$INPUT_FILE"
   else
     echo "$semver" > "$INPUT_FILE"
   fi
