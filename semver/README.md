@@ -58,6 +58,21 @@ jobs:
       - name: Write Semantic Version
         uses: flybits/actions/semver@master
         with:
+          file: package.json
+```
+
+```yaml
+name: Main
+on: push
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - name: Write Semantic Version
+        uses: flybits/actions/semver@master
+        with:
           file: VERSION
           prerelease: rc.1
           metadata: "20191007220000"
