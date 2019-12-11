@@ -1,0 +1,51 @@
+#
+# Docs:
+#   https://help.github.com/en/actions/automating-your-workflow-with-github-actions/metadata-syntax-for-github-actions
+#
+
+name: GitOps Slack
+author: Milad Irannejad
+description: GitHub action for sending deployment notification messages to Slack.
+inputs:
+  dev_webhook:
+    description: The Slack webhook URL for dev environment.
+    required: false
+  staging_webhook:
+    description: The Slack webhook URL for staging environment.
+    required: false
+  production_webhook:
+    description: The Slack webhook URL for production environment.
+    required: false
+  canada_webhook:
+    description: The Slack webhook URL for canada environment.
+    required: false
+  europe_webhook:
+    description: The Slack webhook URL for europe environment.
+    required: false
+  include_fields:
+    description: Whether or not to include fields in the messages.
+    required: false
+    default: false
+  include_actions:
+    description: Whether or not to include action buttons in the messages.
+    required: false
+    default: false
+
+  environment:
+    description: The environment in which the artifact was deployed.
+    required: false
+  region:
+    description: The region in which the artifact was deployed.
+    required: false
+  artifact:
+    description: The name of artifact which was deployed.
+    required: false
+  version:
+    description: The version of artifact which was deployed.
+    required: false
+runs:
+  using: node12
+  main: dist/index.js
+branding:
+  icon: slack
+  color: green

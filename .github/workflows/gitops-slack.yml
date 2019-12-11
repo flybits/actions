@@ -1,0 +1,17 @@
+name: Slack
+on: push
+jobs:
+  slack:
+    name: Notify Slack
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - uses: ./gitops-slack
+        with:
+          dev_webhook: https://dev.example.com
+          staging_webhook: https://staging.example.com
+          production_webhook: https://production.example.com
+          canada_webhook: https://canada.example.com
+          europe_webhook: https://europe.example.com
+          include_fields: true
+          include_actions: true

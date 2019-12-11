@@ -1,0 +1,25 @@
+{
+  "name": "flybits-slack-action",
+  "version": "0.1.0",
+  "description": "Flybits' GitHub action for sending deployment notifications to Slack.",
+  "author": "Milad Irannejad",
+  "license": "ISC",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "lint": "standard",
+    "lint:fix": "standard --fix",
+    "test": "jest",
+    "package": "ncc build index.js -o dist"
+  },
+  "dependencies": {
+    "@actions/core": "^1.2.0",
+    "@actions/github": "^1.1.0",
+    "axios": "^0.19.0"
+  },
+  "devDependencies": {
+    "@zeit/ncc": "^0.20.5",
+    "jest": "^24.9.0",
+    "standard": "^14.3.1"
+  }
+}
