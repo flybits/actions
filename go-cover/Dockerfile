@@ -1,4 +1,4 @@
-FROM golang:1.13
+FROM golang:1.14
 
 LABEL "repository"="https://github.com/flybits/actions"
 LABEL "homepage"="https://github.com/flybits/actions/tree/master/go-cover"
