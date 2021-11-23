@@ -1,4 +1,4 @@
-FROM golang:1.17
+FROM golang:1.16
 
 LABEL "repository"="https://github.com/flybits/actions"
 LABEL "homepage"="https://github.com/flybits/actions/tree/master/go-grpc"

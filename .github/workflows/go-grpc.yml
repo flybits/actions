@@ -13,7 +13,7 @@ jobs:
         uses: ./go-grpc
         with:
           path: ./go-grpc/test
-          command: protoc --proto_path=. --go_out=paths=source_relative,plugins=grpc:. ./hello.proto
+          command: protoc --proto_path=. --go_out=paths=source_relative,plugins=grpc:. hello.proto
       - name: Upload Artifacts
         uses: actions/upload-artifact@v2
         with:
