@@ -1,4 +1,4 @@
-FROM golang:1.16
+FROM golang:1.17
 
 LABEL "repository"="https://github.com/flybits/actions"
 LABEL "homepage"="https://github.com/flybits/actions/tree/master/go-lint"
