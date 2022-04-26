@@ -28,20 +28,24 @@ runs:
       next-version-increment-minor: ${{ contains(github.event.inputs.version, 'minor') }}
       next-version-increment-major: ${{ contains(github.event.inputs.version, 'major') }}
   - name: Setup Git
+    shell: bash
     run: |
       git config --local user.email "flybitbot@github.com"
       git config --local user.name "flybitbot"  
   - name: Bump version and push tag
     id: tag_version
     uses: mathieudutour/github-tag-action@v6.0
+    shell: bash
     with:
       github_token: ${{ github.event.inputs.github_token }}
       custom_tag: ${{ env.RELEASE_VERSION }}
   - name: Create Release
+    shell: bash
     run: gh release create ${{ env.RELEASE_VERSION }} --generate-notes
     env:
       GITHUB_TOKEN: ${{ github.event.inputs.github_token }}
   - name: Update version
+    shell: bash
     run: |
       echo "${{ env.NEXT_VERSION }}" > VERSION
       if [ -n "$(git status --porcelain)" ]; then
