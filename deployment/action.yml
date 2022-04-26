@@ -1,0 +1,50 @@
+name: Deployment
+author: Joao Carvalho
+description: GitHub action for deploy backend services.
+inputs:
+  github_token:
+    description: A GitHub personal access token with repo scope to access private repositories.
+    required: true
+  version:
+    description: 'Semver type of new version (major / minor / patch)'
+    required: true
+    type: choice
+    options: 
+    - patch
+    - minor
+    - major
+
+runs:
+  using: "composite"
+  steps:
+  - uses: actions/checkout@v3
+  - name: Generate versions
+    uses: HardNorth/github-version-generate@v1.1.2
+    with:
+      version-source: file
+      version-file: VERSION
+      release-version-cut-prerelease: true
+      next-version-increment-patch: ${{ contains(github.event.inputs.version, 'patch') }}
+      next-version-increment-minor: ${{ contains(github.event.inputs.version, 'minor') }}
+      next-version-increment-major: ${{ contains(github.event.inputs.version, 'major') }}
+  - name: Setup Git
+    run: |
+      git config --local user.email "flybitbot@github.com"
+      git config --local user.name "flybitbot"  
+  - name: Bump version and push tag
+    id: tag_version
+    uses: mathieudutour/github-tag-action@v6.0
+    with:
+      github_token: ${{ github.event.inputs.github_token }}
+      custom_tag: ${{ env.RELEASE_VERSION }}
+  - name: Create Release
+    run: gh release create ${{ env.RELEASE_VERSION }} --generate-notes
+    env:
+      GITHUB_TOKEN: ${{ github.event.inputs.github_token }}
+  - name: Update version
+    run: |
+      echo "${{ env.NEXT_VERSION }}" > VERSION
+      if [ -n "$(git status --porcelain)" ]; then
+        git commit -am "Beginning ${{env.NEXT_VERSION}} [skip ci]"
+        git push --force
+      fi
