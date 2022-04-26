@@ -40,8 +40,9 @@ runs:
       with:
         fetch-depth: 0
         token: ${{ inputs.github_token }}
-    - name: Generate versions
+    - name: Bump version major-minor
       uses: HardNorth/github-version-generate@v1.1.2
+      if: inputs.version != 'patch'
       with:
         version-source: file
         version-file: VERSION
@@ -49,6 +50,20 @@ runs:
         next-version-increment-patch: true
         next-version-increment-minor: ${{ contains(inputs.version, 'minor') }}
         next-version-increment-major: ${{ contains(inputs.version, 'major') }}
+    - name: Update version
+      shell: bash
+      if: inputs.version != 'patch'
+      run: |
+        echo "${{ env.NEXT_VERSION }}" > VERSION
+    - name: Generate versions
+      uses: HardNorth/github-version-generate@v1.1.2
+      with:
+        version-source: file
+        version-file: VERSION
+        release-version-cut-prerelease: true
+        next-version-increment-patch: true
+        next-version-increment-minor: false
+        next-version-increment-major: false
     - name: Setup Git
       shell: bash
       run: |
