@@ -46,14 +46,10 @@ runs:
     shell: bash
     run: |
       git config --local user.email "flybitbot@github.com"
-      git config --local user.name "flybitbot"  
-  - uses: rickstaa/action-create-tag@v1
-    with:
-      tag: "v${{ env.RELEASE_VERSION }}"
-      github_token: ${{ inputs.github_token }}
+      git config --local user.name "flybitbot"
   - name: Create Release
     shell: bash
-    run: gh release create ${{ env.RELEASE_VERSION }} --generate-notes
+    run: gh release create "v${{ env.RELEASE_VERSION }}" --generate-notes
     env:
       GITHUB_TOKEN: ${{ inputs.github_token }}
   - name: Update version
