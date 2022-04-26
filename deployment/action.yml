@@ -50,6 +50,8 @@ runs:
     shell: bash
     run: |
       git config --local user.name "${{ inputs.who_trigger }}"
+    env:
+      GITHUB_TOKEN: ${{ inputs.github_token }}
   - name: Update version
     shell: bash
     run: |
