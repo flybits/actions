@@ -24,8 +24,12 @@ inputs:
 runs:
   using: "composite"
   steps:
-  - run: |
-    [[ "${{ inputs.branch }}" ]] || { echo "branch input is empty" ; exit 1; }
+  - name: Inputs required
+    shell: bash
+    run: |
+      [[ "${{ inputs.github_token }}" ]] || { echo "github_token input is empty" ; exit 1; }
+      [[ "${{ inputs.branch }}" ]] || { echo "branch input is empty" ; exit 1; }
+      [[ "${{ inputs.version }}" ]] || { echo "version input is empty" ; exit 1; }
   - uses: actions/checkout@v3
   - name: Generate versions
     uses: HardNorth/github-version-generate@v1.1.2
