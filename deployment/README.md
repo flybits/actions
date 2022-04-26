@@ -1,39 +1,39 @@
-# ShellCheck Action
+# Deployment Action
 
-GitHub Action for linting shell scripts and finding possible issues and errors.
-This action uses [ShellCheck](https://github.com/koalaman/shellcheck).
+GitHub Action for deploy backend services.
 
-## Inputs
+## Secrets
 
-### `path`
+### `FLYBITS_GITHUB_TOKEN`
 
-The path to a directory or file that contains shell scripts with `.sh` extension.
+**flybitsbot** Github Token
 
 ## Example Usages
 
 ```yaml
-name: Main
-on: push
-jobs:
-  lint-scripts:
-    name: Lint Scripts
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@master
-      - uses: flybits/actions/shellcheck@master
-```
+name: Deployment
 
-```yaml
-name: Main
-on: push
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Semver type of new version (major / minor / patch)'
+        required: true
+        type: choice
+        options: 
+        - patch
+        - minor
+        - major
+
 jobs:
-  lint-scripts:
-    name: Lint Scripts
+  deployment:
+    name: Deployment
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@master
-      - name: ShellCheck
-        uses: flybits/actions/shellcheck@master
-        with:
-          path: ./scripts
+    - uses: flybits/actions/deployment@master
+      with:
+        version: ${{ github.event.inputs.version }}
+        github_token: ${{ secrets.FLYBITS_GITHUB_TOKEN }}
+        branch: ${{ github.ref_name }}
+        who_trigger: ${{ github.actor }}
 ```
