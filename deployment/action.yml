@@ -50,6 +50,7 @@ runs:
     shell: bash
     run: |
       git config --local user.name "${{ inputs.who_trigger }}"
+      git remote set-url origin https://${{ inputs.github_token }}@github.com/flybits/poc-deployment
     env:
       GITHUB_TOKEN: ${{ inputs.github_token }}
   - name: Update version
