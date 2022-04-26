@@ -36,7 +36,10 @@ runs:
       [[ "${{ inputs.who_trigger }}" ]] || { echo "who_trigger input is empty" ; exit 1; }
       [[ "${{ inputs.version }}" =~ ^(patch|minor|major)$ ]] || { echo "VERSION ERROR: ${{ inputs.version }} isn't a valid value" ; exit 1; }
       [[ "${{ inputs.branch }}" =~ ^(master|main)$ ]] || { echo "BRANCH ERROR: This pipeline it's only available for main or master branch!" ; exit 1; }
-  - uses: actions/checkout@v3
+  - uses: actions/checkout@v2
+    with:
+      fetch-depth: 0
+      token: ${{secrets.FLYBITSBOT_GITHUB_TOKEN}}
   - name: Generate versions
     uses: HardNorth/github-version-generate@v1.1.2
     with:
@@ -50,7 +53,6 @@ runs:
     shell: bash
     run: |
       git config --local user.name "${{ inputs.who_trigger }}"
-      git remote set-url origin https://${{ inputs.github_token }}@github.com/flybits/poc-deployment
     env:
       GITHUB_TOKEN: ${{ inputs.github_token }}
   - name: Update version
