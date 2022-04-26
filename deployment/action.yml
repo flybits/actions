@@ -49,8 +49,7 @@ runs:
   - name: Setup Git
     shell: bash
     run: |
-      git config --global user.name 'flybitsbot'
-      git config --global user.email 'dev@flybits.com'
+      git config --local user.name "${{ inputs.who_trigger }}"
   - name: Update version
     shell: bash
     run: |
