@@ -51,7 +51,7 @@ runs:
     run: |
       git config --local user.email "jaoocarvalhowd@outlook.com"
       git config --local user.name "joaocarvalhowd"
-    - name: Update version
+  - name: Update version
     shell: bash
     run: |
       echo "${{ env.NEXT_VERSION }}" > VERSION
