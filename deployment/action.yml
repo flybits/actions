@@ -5,6 +5,9 @@ inputs:
   github_token:
     description: A GitHub personal access token with repo scope to access private repositories.
     required: true
+  branch:
+    description: Which branch is running the job
+    required: true
   version:
     description: 'Semver type of new version (major / minor / patch)'
     required: true
@@ -17,6 +20,12 @@ inputs:
 runs:
   using: "composite"
   steps:
+  - name: Validate branch
+    run: |
+      if [[ "${{ github.event.inputs.version }}" == "main" || "${{ github.event.inputs.version }}" == "master" ]]; then
+        echo "This pipeline is only available for master or main branch!"
+        exit 1;
+      fi
   - uses: actions/checkout@v3
   - name: Generate versions
     uses: HardNorth/github-version-generate@v1.1.2
