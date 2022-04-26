@@ -9,64 +9,64 @@ inputs:
     description: Which branch is running the job
     required: true
     type: choice
-    options: 
-    - main
-    - master
+    options:
+      - main
+      - master
   version:
-    description: 'Semver type of new version (major / minor / patch)'
+    description: "Semver type of new version (major / minor / patch)"
     required: true
     type: choice
-    options: 
-    - patch
-    - minor
-    - major
+    options:
+      - patch
+      - minor
+      - major
   who_trigger:
-    description: 'Who trigger the pipeline'
+    description: "Who trigger the pipeline"
     required: true
 
 runs:
   using: "composite"
   steps:
-  - name: Inputs validation
-    shell: bash
-    run: |
-      [[ "${{ inputs.github_token }}" ]] || { echo "github_token input is empty" ; exit 1; }
-      [[ "${{ inputs.branch }}" ]] || { echo "branch input is empty" ; exit 1; }
-      [[ "${{ inputs.version }}" ]] || { echo "version input is empty" ; exit 1; }
-      [[ "${{ inputs.who_trigger }}" ]] || { echo "who_trigger input is empty" ; exit 1; }
-      [[ "${{ inputs.version }}" =~ ^(patch|minor|major)$ ]] || { echo "VERSION ERROR: ${{ inputs.version }} isn't a valid value" ; exit 1; }
-      [[ "${{ inputs.branch }}" =~ ^(master|main)$ ]] || { echo "BRANCH ERROR: This pipeline it's only available for main or master branch!" ; exit 1; }
-  - uses: actions/checkout@v2
-    with:
-      fetch-depth: 0
-      token: ${{secrets.FLYBITSBOT_GITHUB_TOKEN}}
-  - name: Generate versions
-    uses: HardNorth/github-version-generate@v1.1.2
-    with:
-      version-source: file
-      version-file: VERSION
-      release-version-cut-prerelease: true
-      next-version-increment-patch: ${{ contains(inputs.version, 'patch') }}
-      next-version-increment-minor: ${{ contains(inputs.version, 'minor') }}
-      next-version-increment-major: ${{ contains(inputs.version, 'major') }}
-  - name: Setup Git
-    shell: bash
-    run: |
-      git config --local user.name "${{ inputs.who_trigger }}"
-    env:
-      GITHUB_TOKEN: ${{ inputs.github_token }}
-  - name: Update version
-    shell: bash
-    run: |
-      echo "${{ env.NEXT_VERSION }}" > VERSION
-      if [ -n "$(git status --porcelain)" ]; then
-        git commit -am "Beginning ${{env.NEXT_VERSION}} [skip ci]"
-        git push --force
-      fi
-    env:
-      GITHUB_TOKEN: ${{ inputs.github_token }}
-  - name: Create Release
-    shell: bash
-    run: gh release create "v${{ env.RELEASE_VERSION }}" --generate-notes
-    env:
-      GITHUB_TOKEN: ${{ inputs.github_token }}
+    - name: Inputs validation
+      shell: bash
+      run: |
+        [[ "${{ inputs.github_token }}" ]] || { echo "github_token input is empty" ; exit 1; }
+        [[ "${{ inputs.branch }}" ]] || { echo "branch input is empty" ; exit 1; }
+        [[ "${{ inputs.version }}" ]] || { echo "version input is empty" ; exit 1; }
+        [[ "${{ inputs.who_trigger }}" ]] || { echo "who_trigger input is empty" ; exit 1; }
+        [[ "${{ inputs.version }}" =~ ^(patch|minor|major)$ ]] || { echo "VERSION ERROR: ${{ inputs.version }} isn't a valid value" ; exit 1; }
+        [[ "${{ inputs.branch }}" =~ ^(master|main)$ ]] || { echo "BRANCH ERROR: This pipeline it's only available for main or master branch!" ; exit 1; }
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        token: ${{ inputs.github_token }}
+    - name: Generate versions
+      uses: HardNorth/github-version-generate@v1.1.2
+      with:
+        version-source: file
+        version-file: VERSION
+        release-version-cut-prerelease: true
+        next-version-increment-patch: ${{ contains(inputs.version, 'patch') }}
+        next-version-increment-minor: ${{ contains(inputs.version, 'minor') }}
+        next-version-increment-major: ${{ contains(inputs.version, 'major') }}
+    - name: Setup Git
+      shell: bash
+      run: |
+        git config --local user.name "${{ inputs.who_trigger }}"
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+    - name: Update version
+      shell: bash
+      run: |
+        echo "${{ env.NEXT_VERSION }}" > VERSION
+        if [ -n "$(git status --porcelain)" ]; then
+          git commit -am "Beginning ${{env.NEXT_VERSION}} [skip ci]"
+          git push --force
+        fi
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+    - name: Create Release
+      shell: bash
+      run: gh release create "v${{ env.RELEASE_VERSION }}" --generate-notes
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
