@@ -35,7 +35,6 @@ runs:
   - name: Bump version and push tag
     id: tag_version
     uses: mathieudutour/github-tag-action@v6.0
-    shell: bash
     with:
       github_token: ${{ github.event.inputs.github_token }}
       custom_tag: ${{ env.RELEASE_VERSION }}
