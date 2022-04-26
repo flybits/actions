@@ -23,7 +23,7 @@ runs:
   - name: Validate branch
     shell: bash
     run: |
-      if [[ "${{ github.event.inputs.branch }}" == "main" || "${{ github.event.inputs.branch }}" == "master" ]]; then
+      if [[ "${{ github.event.inputs.branch }}" != "main" || "${{ github.event.inputs.branch }}" != "master" ]]; then
         echo "This pipeline is only available for master or main branch!"
         exit 1;
       fi
