@@ -8,6 +8,10 @@ inputs:
   branch:
     description: Which branch is running the job
     required: true
+    type: choice
+    options: 
+    - main
+    - master
   version:
     description: 'Semver type of new version (major / minor / patch)'
     required: true
@@ -20,13 +24,6 @@ inputs:
 runs:
   using: "composite"
   steps:
-  - name: Validate branch
-    shell: bash
-    run: |
-      if [[ "${{ github.event.inputs.branch }}" != "main" || "${{ github.event.inputs.branch }}" != "master" ]]; then
-        echo "This pipeline is only available for master or main branch!"
-        exit 1;
-      fi
   - uses: actions/checkout@v3
   - name: Generate versions
     uses: HardNorth/github-version-generate@v1.1.2
