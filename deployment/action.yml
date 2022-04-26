@@ -38,9 +38,7 @@ runs:
       github_token: ${{ github.event.inputs.github_token }}
   - name: Create Release
     shell: bash
-    run: |
-      gh auth login --with-token ${{ github.event.inputs.github_token }}
-      gh release create ${{ env.RELEASE_VERSION }} --generate-notes
+    run: gh release create ${{ env.RELEASE_VERSION }} --generate-notes
     env:
       GITHUB_TOKEN: ${{ github.event.inputs.github_token }}
   - name: Update version
