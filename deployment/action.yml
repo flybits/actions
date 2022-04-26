@@ -42,11 +42,6 @@ runs:
       next-version-increment-patch: ${{ contains(inputs.version, 'patch') }}
       next-version-increment-minor: ${{ contains(inputs.version, 'minor') }}
       next-version-increment-major: ${{ contains(inputs.version, 'major') }}
-  - name: Setup Git
-    shell: bash
-    run: |
-      git config --local user.email "flybitbot@github.com"
-      git config --local user.name "flybitbot"
   - name: Create Release
     shell: bash
     run: gh release create "v${{ env.RELEASE_VERSION }}" --generate-notes
