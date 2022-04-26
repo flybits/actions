@@ -21,6 +21,7 @@ runs:
   using: "composite"
   steps:
   - name: Validate branch
+    shell: bash
     run: |
       if [[ "${{ github.event.inputs.version }}" == "main" || "${{ github.event.inputs.version }}" == "master" ]]; then
         echo "This pipeline is only available for master or main branch!"
