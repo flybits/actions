@@ -24,12 +24,13 @@ inputs:
 runs:
   using: "composite"
   steps:
-  - name: Inputs required
+  - name: Inputs validation
     shell: bash
     run: |
       [[ "${{ inputs.github_token }}" ]] || { echo "github_token input is empty" ; exit 1; }
       [[ "${{ inputs.branch }}" ]] || { echo "branch input is empty" ; exit 1; }
       [[ "${{ inputs.version }}" ]] || { echo "version input is empty" ; exit 1; }
+      [[ "${{ inputs.branch }}" =~ ^(master|main)$ ]] || { echo "This pipeline it's only available for main or master branch!" ; exit 1; }
   - uses: actions/checkout@v3
   - name: Generate versions
     uses: HardNorth/github-version-generate@v1.1.2
