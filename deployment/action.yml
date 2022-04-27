@@ -70,6 +70,16 @@ runs:
         git config --local user.name "${{ inputs.who_trigger }}"
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
+    - name: Releasing current version
+      shell: bash
+      run: |
+        echo "${{ env.RELEASE_VERSION }}" > VERSION
+        if [ -n "$(git status --porcelain)" ]; then
+          git commit -am "Releasing ${{env.RELEASE_VERSION}}"
+          git push --force
+        fi
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
     - name: Update version
       shell: bash
       run: |
