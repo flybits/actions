@@ -1,0 +1,97 @@
+name: Deployment
+author: Joao Carvalho
+description: GitHub action for deploy backend services.
+inputs:
+  github_token:
+    description: A GitHub personal access token with repo scope to access private repositories.
+    required: true
+  branch:
+    description: Which branch is running the job
+    required: true
+    type: choice
+    options:
+      - main
+      - master
+  version:
+    description: "Semver type of new version (major / minor / patch)"
+    required: true
+    type: choice
+    options:
+      - patch
+      - minor
+      - major
+  who_trigger:
+    description: "Who trigger the pipeline"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Inputs validation
+      shell: bash
+      run: |
+        [[ "${{ inputs.github_token }}" ]] || { echo "github_token input is empty" ; exit 1; }
+        [[ "${{ inputs.branch }}" ]] || { echo "branch input is empty" ; exit 1; }
+        [[ "${{ inputs.version }}" ]] || { echo "version input is empty" ; exit 1; }
+        [[ "${{ inputs.who_trigger }}" ]] || { echo "who_trigger input is empty" ; exit 1; }
+        [[ "${{ inputs.version }}" =~ ^(patch|minor|major)$ ]] || { echo "VERSION ERROR: ${{ inputs.version }} isn't a valid value" ; exit 1; }
+        [[ "${{ inputs.branch }}" =~ ^(master|main)$ ]] || { echo "BRANCH ERROR: This pipeline it's only available for main or master branch!" ; exit 1; }
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        token: ${{ inputs.github_token }}
+    - name: Bump version major-minor
+      uses: HardNorth/github-version-generate@v1.1.2
+      if: inputs.version != 'patch'
+      with:
+        version-source: file
+        version-file: VERSION
+        release-version-cut-prerelease: true
+        next-version-increment-patch: true
+        next-version-increment-minor: ${{ contains(inputs.version, 'minor') }}
+        next-version-increment-major: ${{ contains(inputs.version, 'major') }}
+    - name: Update version
+      shell: bash
+      if: inputs.version != 'patch'
+      run: |
+        echo "${{ env.NEXT_VERSION }}" > VERSION
+    - name: Generate versions
+      uses: HardNorth/github-version-generate@v1.1.2
+      with:
+        version-source: file
+        version-file: VERSION
+        release-version-cut-prerelease: true
+        next-version-increment-patch: true
+        next-version-increment-minor: false
+        next-version-increment-major: false
+    - name: Setup Git
+      shell: bash
+      run: |
+        git config --local user.name "${{ inputs.who_trigger }}"
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+    - name: Releasing current version
+      shell: bash
+      run: |
+        echo "${{ env.RELEASE_VERSION }}" > VERSION
+        if [ -n "$(git status --porcelain)" ]; then
+          git commit -am "Releasing ${{env.RELEASE_VERSION}}"
+          git push --force
+        fi
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+    - name: Update version
+      shell: bash
+      run: |
+        echo "${{ env.NEXT_VERSION }}" > VERSION
+        if [ -n "$(git status --porcelain)" ]; then
+          git commit -am "Beginning ${{env.NEXT_VERSION}} [skip ci]"
+          git push --force
+        fi
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+    - name: Create Release
+      shell: bash
+      run: gh release create "v${{ env.RELEASE_VERSION }}" --generate-notes
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
