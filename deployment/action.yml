@@ -83,7 +83,7 @@ runs:
     - name: Update version
       shell: bash
       run: |
-        echo "${{ env.NEXT_VERSION }}-0" > VERSION
+        echo "${{ env.NEXT_VERSION }}" > VERSION
         if [ -n "$(git status --porcelain)" ]; then
           git commit -am "Beginning ${{env.NEXT_VERSION}} [skip ci]"
           git push --force
