@@ -42,7 +42,7 @@ runs:
         [[ "${{ inputs.version }}" =~ ^(patch|minor|major)$ ]] || { echo "VERSION ERROR: ${{ inputs.version }} isn't a valid value" ; exit 1; }
         [[ "${{ inputs.branch }}" =~ ^(master|main)$ ]] || { echo "BRANCH ERROR: This pipeline it's only available for main or master branch!" ; exit 1; }
         echo $current_version
-        [[ $current_version =~ ^\d+.\d+.\d+-\d$ ]] || { echo "VERSION FILE ERROR: INVALID FORMAT!" ; exit 1; }
+        [[ "$current_version" =~ ^[0-9]+.[0-9]+.[0-9]+-[0-9]$ ]] || { echo "VERSION FILE ERROR: INVALID FORMAT!" ; exit 1; }
     - name: Bump version major-minor
       uses: HardNorth/github-version-generate@v1.1.2
       if: inputs.version != 'patch'
