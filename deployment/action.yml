@@ -27,19 +27,21 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+        token: ${{ inputs.github_token }}
     - name: Inputs validation
       shell: bash
       run: |
+        current_version=$(cat VERSION)
         [[ "${{ inputs.github_token }}" ]] || { echo "github_token input is empty" ; exit 1; }
         [[ "${{ inputs.branch }}" ]] || { echo "branch input is empty" ; exit 1; }
         [[ "${{ inputs.version }}" ]] || { echo "version input is empty" ; exit 1; }
         [[ "${{ inputs.who_trigger }}" ]] || { echo "who_trigger input is empty" ; exit 1; }
         [[ "${{ inputs.version }}" =~ ^(patch|minor|major)$ ]] || { echo "VERSION ERROR: ${{ inputs.version }} isn't a valid value" ; exit 1; }
         [[ "${{ inputs.branch }}" =~ ^(master|main)$ ]] || { echo "BRANCH ERROR: This pipeline it's only available for main or master branch!" ; exit 1; }
-    - uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-        token: ${{ inputs.github_token }}
+        [[ "${{ current_version }}" =~ ^\d+.\d+.\d+-\d$ ]] || { echo "VERSION FILE ERROR: INVALID FORMAT!" ; exit 1; }
     - name: Bump version major-minor
       uses: HardNorth/github-version-generate@v1.1.2
       if: inputs.version != 'patch'
