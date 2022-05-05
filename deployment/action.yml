@@ -69,7 +69,9 @@ runs:
     - name: Setup Git
       shell: bash
       run: |
-        git config --local user.name "${{ inputs.who_trigger }}"
+        user=$(curl -H "Accept: application/vnd.github.v3+json" -H "Authorization: token ${{ inputs.github_token }}" https://api.github.com/users/${{ inputs.who_trigger }})
+        git config --local user.name "$(jq --raw-output '.name' <<< $user)"
+        git config --local user.email "$(jq --raw-output '.email' <<< $user)"
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
     - name: Releasing current version
