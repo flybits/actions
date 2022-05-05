@@ -34,9 +34,6 @@ runs:
     - name: Inputs validation
       shell: bash
       run: |
-        git config --get user.email
-        git config --get user.name
-        exit 1;
         current_version=$(cat VERSION)
         [[ "${{ inputs.github_token }}" ]] || { echo "github_token input is empty" ; exit 1; }
         [[ "${{ inputs.branch }}" ]] || { echo "branch input is empty" ; exit 1; }
@@ -72,7 +69,8 @@ runs:
     - name: Setup Git
       shell: bash
       run: |
-        git config --local user.name "${{ inputs.who_trigger }}"
+        git config --local user.email "joao.carvalho@flybits.com"
+        git config --local user.name "João Carvalho"
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
     - name: Releasing current version
