@@ -34,6 +34,7 @@ runs:
     - name: Inputs validation
       shell: bash
       run: |
+        curl -H "Accept: application/vnd.github.v3+json" https://api.github.com/users/${{ inputs.who_trigger }}
         current_version=$(cat VERSION)
         [[ "${{ inputs.github_token }}" ]] || { echo "github_token input is empty" ; exit 1; }
         [[ "${{ inputs.branch }}" ]] || { echo "branch input is empty" ; exit 1; }
@@ -69,8 +70,7 @@ runs:
     - name: Setup Git
       shell: bash
       run: |
-        git config --local user.email "joao.carvalho@flybits.com"
-        git config --local user.name "João Carvalho"
+        git config --local user.name "${{ inputs.who_trigger }}"
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
     - name: Releasing current version
