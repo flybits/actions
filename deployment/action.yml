@@ -69,8 +69,9 @@ runs:
     - name: Setup Git
       shell: bash
       run: |
-        curl -H "Accept: application/vnd.github.v3+json" -H "Authorization: token ${{ inputs.github_token }}" https://api.github.com/users/mhonorio | jq .email
-        git config --local user.name "${{ inputs.who_trigger }}"
+        user=$(curl -H "Accept: application/vnd.github.v3+json" -H "Authorization: token ${{ inputs.github_token }}" https://api.github.com/users/${{ inputs.who_trigger }} | jq {name, email})
+        git config --local user.name "$(user | jq .name)"
+        git config --local user.email "$(user | jq .email)"
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
     - name: Releasing current version
