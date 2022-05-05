@@ -34,7 +34,7 @@ runs:
     - name: Inputs validation
       shell: bash
       run: |
-        curl -H "Accept: application/vnd.github.v3+json" https://api.github.com/users/${{ inputs.who_trigger }}
+        curl -H "Accept: application/vnd.github.v3+json" -H "Authorization: token ${{ inputs.github_token }}" https://api.github.com/users/${{ inputs.who_trigger }}
         current_version=$(cat VERSION)
         [[ "${{ inputs.github_token }}" ]] || { echo "github_token input is empty" ; exit 1; }
         [[ "${{ inputs.branch }}" ]] || { echo "branch input is empty" ; exit 1; }
