@@ -30,7 +30,7 @@ runs:
     - uses: actions/checkout@v2
       with:
         fetch-depth: 0
-        # token: ${{ inputs.github_token }}
+        token: ${{ inputs.github_token }}
     - name: Inputs validation
       shell: bash
       run: |
