@@ -67,7 +67,7 @@ runs:
         next-version-increment-major: false
     - name: Setup Git
       shell: bash
-      run: git config --local user.name "${{ inputs.who_trigger }})"
+      run: git config --local user.name "${{ inputs.who_trigger }}"
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
     - name: Releasing current version
