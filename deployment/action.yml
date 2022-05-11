@@ -67,36 +67,31 @@ runs:
         next-version-increment-major: false
     - name: Setup Git
       shell: bash
-      run: |
-        user=$(curl -H "Accept: application/vnd.github.v3+json" -H "Authorization: token ${{ inputs.github_token }}" https://api.github.com/users/${{ inputs.who_trigger }})
-        echo $user
-        git config --local user.name "$(jq --raw-output '.name' <<< $user)"
-        git config --local user.email "$(jq --raw-output '.email' <<< $user)"
-        exit 1;
+      run: git config --local user.name "${{ inputs.who_trigger }})"
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
-    # - name: Releasing current version
-    #   shell: bash
-    #   run: |
-    #     echo "${{ env.RELEASE_VERSION }}" > VERSION
-    #     if [ -n "$(git status --porcelain)" ]; then
-    #       git commit -am "Releasing ${{env.RELEASE_VERSION}}"
-    #       git push --force
-    #     fi
-    #   env:
-    #     GITHUB_TOKEN: ${{ inputs.github_token }}
-    # - name: Update version
-    #   shell: bash
-    #   run: |
-    #     echo "${{ env.NEXT_VERSION }}" > VERSION
-    #     if [ -n "$(git status --porcelain)" ]; then
-    #       git commit -am "Beginning ${{env.NEXT_VERSION}} [skip ci]"
-    #       git push --force
-    #     fi
-    #   env:
-    #     GITHUB_TOKEN: ${{ inputs.github_token }}
-    # - name: Create Release
-    #   shell: bash
-    #   run: gh release create "v${{ env.RELEASE_VERSION }}" --generate-notes
-    #   env:
-    #     GITHUB_TOKEN: ${{ inputs.github_token }}
+    - name: Releasing current version
+      shell: bash
+      run: |
+        echo "${{ env.RELEASE_VERSION }}" > VERSION
+        if [ -n "$(git status --porcelain)" ]; then
+          git commit -am "Releasing ${{env.RELEASE_VERSION}}"
+          git push --force
+        fi
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+    - name: Update version
+      shell: bash
+      run: |
+        echo "${{ env.NEXT_VERSION }}" > VERSION
+        if [ -n "$(git status --porcelain)" ]; then
+          git commit -am "Beginning ${{env.NEXT_VERSION}} [skip ci]"
+          git push --force
+        fi
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+    - name: Create Release
+      shell: bash
+      run: gh release create "v${{ env.RELEASE_VERSION }}" --generate-notes
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
