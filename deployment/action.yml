@@ -42,7 +42,7 @@ runs:
         [[ "${{ inputs.branch }}" =~ ^(main)$ ]] || { echo "BRANCH ERROR: This pipeline it's only available for main branch!" ; exit 1; }
         [[ "$current_version" =~ ^[0-9]+.[0-9]+.[0-9]+-[0-9]$ ]] || { echo "VERSION FILE ERROR: INVALID FORMAT!" ; exit 1; }
     - name: Bump version major-minor
-      uses: HardNorth/github-version-generate@v1.1.2
+      uses: HardNorth/github-version-generate@v1.2.0
       if: inputs.version != 'patch'
       with:
         version-source: file
@@ -57,7 +57,7 @@ runs:
       run: |
         echo "${{ env.NEXT_VERSION }}" > VERSION
     - name: Generate versions
-      uses: HardNorth/github-version-generate@v1.1.2
+      uses: HardNorth/github-version-generate@v1.2.0
       with:
         version-source: file
         version-file: VERSION
