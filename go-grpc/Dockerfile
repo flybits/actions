@@ -21,8 +21,8 @@ RUN protoc_release=${protoc_release:-$(curl -s https://api.github.com/repos/prot
     rm -f protoc.zip
 
 # Install gRPC tools for Go
-RUN go install google.golang.org/grpc && \
-    go install github.com/golang/protobuf/protoc-gen-go
+RUN go install google.golang.org/grpc@latest && \
+    go install github.com/golang/protobuf/protoc-gen-go@latest
 
 COPY entrypoint.sh /entrypoint.sh
 ENTRYPOINT [ "/entrypoint.sh" ]
