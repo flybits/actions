@@ -80,6 +80,11 @@ runs:
         fi
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
+    - name: Create Release
+      shell: bash
+      run: gh release create "v${{ env.RELEASE_VERSION }}" --generate-notes
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
     - name: Update version
       shell: bash
       run: |
@@ -88,10 +93,5 @@ runs:
           git commit -am "Beginning ${{env.NEXT_VERSION}} [skip ci]"
           git push --force
         fi
-      env:
-        GITHUB_TOKEN: ${{ inputs.github_token }}
-    - name: Create Release
-      shell: bash
-      run: gh release create "v${{ env.RELEASE_VERSION }}" --generate-notes
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
