@@ -1,0 +1,57 @@
+name: Govulncheck
+author: Petar Kramaric
+description: GitHub action for running govulncheck
+inputs:
+  slack_webhook_url:
+    description: A Slack webhook url for alerting on failures
+    required: false
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v4
+    - uses: actions/setup-go@v4
+      with:
+        go-version-file: 'go.mod'
+        go-version: '1.21.3'
+    - name: Configure git for private modules
+      run: git config --global url."https://${{secrets.FLYBITS_DEPLOYMENT_TOKEN}}@github.com".insteadOf "https://github.com"
+    - name: Run Go version
+      run: go version
+      shell: bash
+    - name: Get official govulncheck
+      run: go install golang.org/x/vuln/cmd/govulncheck@latest
+      shell: bash
+    - name: Run govulncheck
+      run: govulncheck ./...
+      shell: bash
+    - name: Send data to Slack
+      uses: slackapi/slack-github-action@v1.24.0
+      id: slack
+      with:
+        payload: |
+          {
+            "attachments": [
+              {
+                "fallback": "${{ github.repository }} Govulncheck nightly failed",
+                "color": "FF0000",
+                "author_name": "${{ github.repository }}",
+                "author_icon": "https://avatars.slack-edge.com/2023-11-06/6153795552370_f0926dce057ace056b53_96.webp",
+                "title": "Nightly Failure",
+                "title_link": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+                "fields": [
+                  {
+                    "title": "Priority",
+                    "value": "High",
+                    "short": false
+                  }
+                ],
+                "image_url": "http://my-website.com/path/to/image.jpg",
+                "thumb_url": "http://example.com/path/to/thumb.png",
+                "footer": "GitHub Nightly Build for ${{ github.repository }}",
+                "footer_icon": "https://github.githubassets.com/favicons/favicon.png"
+              }
+            ]
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ input.slack_webhook_url }}
+        SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
