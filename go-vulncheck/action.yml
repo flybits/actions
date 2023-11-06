@@ -29,6 +29,7 @@ runs:
       run: govulncheck ./...
       shell: bash
     - name: Send data to Slack
+      if: inputs.slack_webhook_url != ''
       uses: slackapi/slack-github-action@v1.24.0
       id: slack
       with:
