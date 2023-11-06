@@ -8,10 +8,15 @@ inputs:
   deployment_token:
     description: A deployment token for github
     required: true
+  branch:
+    description: The branch to run this govulncheck on
+    required: true
 runs:
   using: "composite"
   steps:
     - uses: actions/checkout@v4
+      with:
+        ref: ${{inputs.branch}}
     - uses: actions/setup-go@v4
       with:
         go-version-file: 'go.mod'
