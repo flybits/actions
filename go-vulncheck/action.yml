@@ -67,7 +67,7 @@ runs:
         SLACK_WEBHOOK_URL: ${{ inputs.slack_webhook_url }}
         SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
     - name: Send data to Slack If Success
-      if: inputs.slack_webhook_url != '' && !failure() && show_success_slack_msg == 'true'
+      if: inputs.slack_webhook_url != '' && !failure() && inputs.show_success_slack_msg == 'true'
       uses: slackapi/slack-github-action@v1.24.0
       id: slack-success
       with:
