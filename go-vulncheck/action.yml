@@ -11,6 +11,9 @@ inputs:
   branch:
     description: The branch to run this govulncheck on
     required: true
+  show_success_slack_msg:
+    description: indicates that all failures and successes should be displayed in slack, otherwise only failures will appear
+    required: true
 runs:
   using: "composite"
   steps:
@@ -33,8 +36,8 @@ runs:
     - name: Run govulncheck
       run: govulncheck ./...
       shell: bash
-    - name: Send data to Slack
-      if: inputs.slack_webhook_url != ''
+    - name: Send data to Slack If Failure
+      if: inputs.slack_webhook_url != '' && failure()
       uses: slackapi/slack-github-action@v1.24.0
       id: slack
       with:
@@ -63,3 +66,27 @@ runs:
       env:
         SLACK_WEBHOOK_URL: ${{ inputs.slack_webhook_url }}
         SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+    - name: Send data to Slack If Success
+      if: inputs.slack_webhook_url != '' && !failure() && show_success_slack_msg == 'true'
+      uses: slackapi/slack-github-action@v1.24.0
+      id: slack
+      with:
+        payload: |
+          {
+            "attachments": [
+              {
+                "fallback": "${{ github.repository }} Govulncheck nightly success",
+                "color": "008000",
+                "author_name": "${{ github.repository }}",
+                "author_icon": "https://avatars.slack-edge.com/2023-11-06/6153795552370_f0926dce057ace056b53_96.webp",
+                "title": "Nightly Success",
+                "title_link": "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}",
+                "footer": "GitHub Nightly Build for ${{ github.repository }}",
+                "footer_icon": "https://github.githubassets.com/favicons/favicon.png"
+              }
+            ]
+          }
+      env:
+        SLACK_WEBHOOK_URL: ${{ inputs.slack_webhook_url }}
+        SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
+      
