@@ -15,7 +15,7 @@ jobs:
         with:
           path: ./go-cover/test
       - name: Upload Test Report
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: coverage-report
           path: ./go-cover/test/${{ steps.cover.outputs.coverage_report_file }}
