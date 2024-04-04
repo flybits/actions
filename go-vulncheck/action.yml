@@ -23,7 +23,7 @@ runs:
     - uses: actions/setup-go@v5
       with:
         go-version-file: 'go.mod'
-        go-version: '1.22.0'
+        go-version: '1.22.2'
         check-latest: true
     - name: Configure git for private modules
       run: git config --global url."https://${{inputs.deployment_token}}@github.com".insteadOf "https://github.com"
@@ -36,7 +36,7 @@ runs:
       shell: bash
     - name: Check govulncheck version
       run: go version -m /home/runner/go/bin/govulncheck
-      shell: bash  
+      shell: bash
     - name: Run govulncheck
       run: govulncheck ./...
       shell: bash
@@ -93,4 +93,3 @@ runs:
       env:
         SLACK_WEBHOOK_URL: ${{ inputs.slack_webhook_url }}
         SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
-      
