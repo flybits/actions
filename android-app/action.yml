@@ -51,15 +51,18 @@ runs:
 
       #GRANT RIGHTS
     - name: Grant rights
+      shell: bash
       run: chmod +x build.gradle
 
       #BUILD GRADLE
     - name: Build with Gradle
+      shell: bash
       id: build
       run: ./gradlew build
 
       #BUILD RELEASE GRADLE
     - name: Build Release
+      shell: bash
       id: buildRelease
       run: ./gradlew bundleRelease
 
@@ -76,6 +79,7 @@ runs:
 
       #CREATE JSON SERVICE ACCOUNT
     - name: Create service_account.json
+      shell: bash
       id: createServiceAccount
       run: echo '${{ secrets.SERVICE_ACCOUNT_JSON }}' > service_account.json
 
