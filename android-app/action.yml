@@ -2,6 +2,9 @@ name: Deployment
 author: Petar Kramaric
 description: GitHub action for deploying android applications
 inputs:
+  github_token:
+    description: A GitHub personal access token with repo scope to access private repositories.
+    required: true
   branch:
     description: Which branch is running the job
     required: true
@@ -23,6 +26,19 @@ inputs:
 runs:
   using: "composite"
   steps:
+    #Validate Inputs
+    - name: Inputs validation
+      shell: bash
+      run: |
+        current_version=$(cat VERSION)
+        [[ "${{ inputs.github_token }}" ]] || { echo "github_token input is empty" ; exit 1; }
+        [[ "${{ inputs.branch }}" ]] || { echo "branch input is empty" ; exit 1; }
+        [[ "${{ inputs.version }}" ]] || { echo "version input is empty" ; exit 1; }
+        [[ "${{ inputs.who_trigger }}" ]] || { echo "who_trigger input is empty" ; exit 1; }
+        [[ "${{ inputs.version }}" =~ ^(patch|minor|major)$ ]] || { echo "VERSION ERROR: ${{ inputs.version }} isn't a valid value" ; exit 1; }
+        [[ "${{ inputs.branch }}" =~ ^(main)$ ]] || { echo "BRANCH ERROR: This pipeline it's only available for main branch!" ; exit 1; }
+        [[ "$current_version" =~ ^[0-9]+.[0-9]+.[0-9]+-[0-9]$ ]] || { echo "VERSION FILE ERROR: INVALID FORMAT!" ; exit 1; }
+    
     #Checkout Code
     - name: Checkout Code
       uses: actions/checkout@v4
