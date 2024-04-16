@@ -1,0 +1,74 @@
+name: Deployment
+author: Petar Kramaric
+description: GitHub action for deploying android applications
+inputs:
+  branch:
+    description: Which branch is running the job
+    required: true
+    type: choice
+    options:
+      - main
+  version:
+    description: "Semver type of new version (major / minor / patch)"
+    required: true
+    type: choice
+    options:
+      - patch
+      - minor
+      - major
+  who_trigger:
+    description: "Who trigger the pipeline"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    #Checkout Code
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+      #JDK 1.8
+    - name: Set up JDK 1.8
+      uses: actions/setup-java@v1
+      with:
+        java-version: 1.8
+
+      #GRANT RIGHTS
+    - name: Grant rights
+      run: chmod +x build.gradle
+
+      #BUILD GRADLE
+    - name: Build with Gradle
+      id: build
+      run: ./gradlew build
+
+      #BUILD RELEASE GRADLE
+    - name: Build Release
+      id: buildRelease
+      run: ./gradlew bundleRelease
+
+      #SIGN APK
+    - name: Sign APK
+      id: sign
+      uses: r0adkll/sign-android-release@v1
+      with:
+        releaseDirectory: app/build/outputs/apk/release
+        signingKeyBase64: ${{ secrets.KEYSTORE_FILE }}
+        alias: ${{ secrets.ALIAS }}
+        keyStorePassword: ${{ secrets.KEYSTORE_PASSWORD }}
+        keyPassword: ${{ secrets.ALIAS_PASSWORD }}
+
+      #CREATE JSON SERVICE ACCOUNT
+    - name: Create service_account.json
+      id: createServiceAccount
+      run: echo '${{ secrets.SERVICE_ACCOUNT_JSON }}' > service_account.json
+
+      #UPLOAD TO PLAY STORE
+    - name: Deploy to Play Store (BETA)
+      id: deploy
+      uses: r0adkll/upload-google-play@v1
+      with:
+        serviceAccountJson: service_account.json
+        packageName: com.flybits.android.life.app
+        releaseFile: app/build/outputs/bundle/release/app-release.apk
+        track: beta
