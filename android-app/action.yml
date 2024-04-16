@@ -41,6 +41,11 @@ inputs:
 runs:
   using: "composite"
   steps:
+
+    #Checkout Code
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      
     #Validate Inputs
     - name: Inputs validation
       shell: bash
@@ -58,10 +63,6 @@ runs:
         [[ "${{ inputs.version }}" =~ ^(patch|minor|major)$ ]] || { echo "VERSION ERROR: ${{ inputs.version }} isn't a valid value" ; exit 1; }
         [[ "${{ inputs.branch }}" =~ ^(main)$ ]] || { echo "BRANCH ERROR: This pipeline it's only available for main branch!" ; exit 1; }
         [[ "$current_version" =~ ^[0-9]+.[0-9]+.[0-9]+-[0-9]$ ]] || { echo "VERSION FILE ERROR: INVALID FORMAT!" ; exit 1; }
-    
-    #Checkout Code
-    - name: Checkout Code
-      uses: actions/checkout@v4
 
       #JDK 1.8
     - name: Set up JDK 1.8
