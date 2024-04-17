@@ -74,7 +74,7 @@ runs:
       run: |
         current_version_code=$(cat VERSION_CODE)
         current_version_code=$((current_version_code+1))
-        echo Version Code: $current_version_code
+        echo Version Code: ${{ env.current_version_code }}
         echo Version Name: ${{ env.RELEASE_VERSION }}
 
     #Increase Version in Build.gradle file
