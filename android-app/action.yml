@@ -88,11 +88,11 @@ runs:
         echo Last build tool version is: $BUILD_TOOL_VERSION
 
       #SIGN APK
-    - name: Sign APK
+    - name: Sign AAB
       id: sign_app
       uses: r0adkll/sign-android-release@v1
       with:
-        releaseDirectory: app/build/outputs/apk/release
+        releaseDirectory: app/build/outputs/bundle/release
         signingKeyBase64: ${{ inputs.keystore_file }}
         alias: ${{ inputs.alias }}
         keyStorePassword: ${{ inputs.keystore_password }}
