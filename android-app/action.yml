@@ -89,7 +89,7 @@ runs:
 
       #SIGN APK
     - name: Sign APK
-      id: sign
+      id: sign_app
       uses: r0adkll/sign-android-release@v1
       with:
         releaseDirectory: app/build/outputs/apk/release
@@ -113,5 +113,5 @@ runs:
       with:
         serviceAccountJson: service_account.json
         packageName: com.flybits.android.life.app
-        releaseFile: app/build/outputs/apk/release/app-release.apk
+        releaseFile: ${{steps.sign_app.outputs.signedReleaseFile}}
         track: beta
