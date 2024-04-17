@@ -84,7 +84,7 @@ runs:
       shell: bash
       run: |
         # Update build.gradle with new version code and name
-        sed -i "s/versionCode [0-9]\+/${use_version_code}/g" app/build.gradle
+        sed -i "s/versionCode [0-9]\+/\${use_version_code}/g" app/build.gradle
         sed -i "s/versionName \"[^\"]*\"/versionName \"${{ env.RELEASE_VERSION }}\"/g" app/build.gradle
         echo "${{ env.current_version_code }}" > VERSION_CODE
         echo "${{ env.RELEASE_VERSION }}" > VERSION
