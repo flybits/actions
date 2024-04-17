@@ -113,5 +113,5 @@ runs:
       with:
         serviceAccountJson: service_account.json
         packageName: com.flybits.android.life.app
-        releaseFile: app/build/outputs/bundle/release/app-release.apk
+        releaseFile: app/build/outputs/apk/release/app-release.apk
         track: beta
