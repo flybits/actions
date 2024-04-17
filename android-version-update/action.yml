@@ -1,0 +1,62 @@
+name: Deployment
+author: Petar Kramaric
+description: GitHub action for deploying android applications
+inputs:
+  github_token:
+    description: A GitHub personal access token with repo scope to access private repositories.
+    required: true
+  branch:
+    description: Which branch is running the job
+    required: true
+    type: choice
+    options:
+      - main
+  version:
+    description: "Semver type of new version (major / minor / patch)"
+    required: true
+    type: choice
+    options:
+      - patch
+      - minor
+      - major
+  who_trigger:
+    description: "Who trigger the pipeline"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+
+    #Checkout Code
+    - name: Checkout Code
+      uses: actions/checkout@v4
+
+    #SETUP GIT LOCAL USER
+    - name: Setup Git
+      shell: bash
+      run: git config --local user.name "${{ inputs.who_trigger }}"
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+
+    #Increase Version Code
+    - name: Increase Version
+      shell: bash
+      run: |
+        current_version_code=$(cat VERSION_CODE)
+        current_version_code=$((current_version_code+1))
+        echo Version Code: $current_version_code
+
+    #Increase Version in Build.gradle file
+    - name: Increase version code and change version name
+      run: |
+        # Update build.gradle with new version code and name
+        sed -i "s/versionCode [0-9]\+/versionCode ${{ env.VERSION_CODE }}/g" app/build.gradle
+        echo "${{ env.current_version_code }}" > VERSION_CODE
+    
+    #Commit Code
+    - name: Commit and push changes
+      run: |
+        git commit -am "Bump version code and change version name"
+        git push --force
+       
+    
