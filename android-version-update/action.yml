@@ -48,6 +48,7 @@ runs:
 
     #Increase Version in Build.gradle file
     - name: Increase version code and change version name
+      shell: bash
       run: |
         # Update build.gradle with new version code and name
         sed -i "s/versionCode [0-9]\+/versionCode ${{ env.VERSION_CODE }}/g" app/build.gradle
@@ -55,6 +56,7 @@ runs:
     
     #Commit Code
     - name: Commit and push changes
+      shell: bash
       run: |
         git commit -am "Bump version code and change version name"
         git push --force
