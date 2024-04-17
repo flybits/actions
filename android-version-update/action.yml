@@ -44,7 +44,7 @@ runs:
       if: inputs.version != 'patch'
       with:
         version-source: file
-        version-file: VERSION_NAME
+        version-file: VERSION
         release-version-cut-prerelease: true
         next-version-increment-patch: true
         next-version-increment-minor: ${{ contains(inputs.version, 'minor') }}
@@ -55,14 +55,14 @@ runs:
       shell: bash
       if: inputs.version != 'patch'
       run: |
-        echo "${{ env.NEXT_VERSION }}" > VERSION_NAME
+        echo "${{ env.NEXT_VERSION }}" > VERSION
 
     #Increase Version Name PATCH
     - name: Generate versions
       uses: HardNorth/github-version-generate@v1.4.0
       with:
         version-source: file
-        version-file: VERSION_NAME
+        version-file: VERSION
         release-version-cut-prerelease: true
         next-version-increment-patch: true
         next-version-increment-minor: false
@@ -75,7 +75,7 @@ runs:
         current_version_code=$(cat VERSION_CODE)
         current_version_code=$((current_version_code+1))
         echo Version Code: $current_version_code
-        echo Version Name: ${{ env.VERSION_NAME }}
+        echo Version Name: ${{ env.NEXT_VERSION }}
 
     #Increase Version in Build.gradle file
     - name: Increase version code and change version name
@@ -85,7 +85,7 @@ runs:
         sed -i "s/versionCode [0-9]\+/versionCode $current_version_code/g" app/build.gradle
         sed -i "s/versionName \"[^\"]*\"/versionName \"${{ env.NEXT_VERSION }}\"/g" app/build.gradle
         echo "${{ env.current_version_code }}" > VERSION_CODE
-        echo "${{ env.NEXT_VERSION }}" > VERSION_NAME
+        echo "${{ env.NEXT_VERSION }}" > VERSION
     
     #Commit Version Increase Code
     - name: Commit and push changes
