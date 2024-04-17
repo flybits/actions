@@ -60,6 +60,7 @@ runs:
       with:
         distribution: 'oracle'
         java-version: '18'
+        cache: 'gradle'
 
       #GRANT RIGHTS
     - name: Grant rights
