@@ -114,4 +114,4 @@ runs:
         serviceAccountJson: service_account.json
         packageName: com.flybits.android.life.app
         releaseFiles: ${{steps.sign_app.outputs.signedReleaseFile}}
-        track: beta
+        track: qa
