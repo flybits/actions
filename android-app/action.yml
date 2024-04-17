@@ -59,7 +59,7 @@ runs:
       uses: actions/setup-java@v4
       with:
         distribution: 'oracle'
-        java-version: '11'
+        java-version: '18'
 
       #GRANT RIGHTS
     - name: Grant rights
