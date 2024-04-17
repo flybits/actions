@@ -68,21 +68,16 @@ runs:
         next-version-increment-minor: false
         next-version-increment-major: false
 
-    #Increase Version Code
-    - name: Increase Version
-      shell: bash
-      run: |
-        current_version_code=$(cat VERSION_CODE)
-        current_version_code=$((current_version_code+1))
-        echo Version Code: ${{ env.current_version_code }}
-        echo Version Name: ${{ env.RELEASE_VERSION }}
-
     #Increase Version in Build.gradle file
     - name: Increase version code and change version name
       shell: bash
       run: |
-        # Update build.gradle with new version code and name
-        sed -i "s/versionCode [0-9]*/versionCode ${{ env.current_version_code }}/g" app/build.gradle
+        current_version_code=$(cat VERSION_CODE)
+        current_version_code=$((current_version_code+1))
+        echo Version Code: $current_version_code
+        echo Version Name: ${{ env.RELEASE_VERSION }}
+
+        sed -i "s/versionCode [0-9]*/versionCode $current_version_code/g" app/build.gradle
         sed -i "s/versionName \"[^\"]*\"/versionName \"${{ env.RELEASE_VERSION }}\"/g" app/build.gradle
         echo "${{ env.current_version_code }}" > VERSION_CODE
         echo "${{ env.RELEASE_VERSION }}" > VERSION
