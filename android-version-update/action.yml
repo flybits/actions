@@ -60,5 +60,6 @@ runs:
       run: |
         git commit -am "Bump version code and change version name"
         git push --force
-       
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
     
