@@ -75,7 +75,8 @@ runs:
         current_version_code=$(cat VERSION_CODE)
         current_version_code=$((current_version_code+1))
         use_version_code="versionCode $current_version_code"
-        echo Version Code: $use_version_code
+        echo Version Code: $current_version_code
+        echo Version Code To Replace: $use_version_code
         echo Version Name: ${{ env.RELEASE_VERSION }}
 
     #Increase Version in Build.gradle file
@@ -83,7 +84,7 @@ runs:
       shell: bash
       run: |
         # Update build.gradle with new version code and name
-        sed -i "s/versionCode [0-9]\+/$use_version_code/g" app/build.gradle
+        sed -i "s/versionCode [0-9]\+/${use_version_code}/g" app/build.gradle
         sed -i "s/versionName \"[^\"]*\"/versionName \"${{ env.RELEASE_VERSION }}\"/g" app/build.gradle
         echo "${{ env.current_version_code }}" > VERSION_CODE
         echo "${{ env.RELEASE_VERSION }}" > VERSION
