@@ -31,6 +31,12 @@ runs:
     - name: Checkout Code
       uses: actions/checkout@v4
 
+    #Validate Inputs
+    - name: Inputs validation
+      shell: bash
+      run: |
+        [[ "${{ inputs.github_token }}" ]] || { echo "github_token input is empty" ; exit 1; }
+
     #SETUP GIT LOCAL USER
     - name: Setup Git
       shell: bash
