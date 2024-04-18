@@ -44,7 +44,7 @@ runs:
         git config user.name "${{ inputs.who_trigger }}"
         git config user.email "${{ inputs.who_trigger }}"
       env:
-        GH_TOKEN: ${{ inputs.github_token }}
+        GITHUB_TOKEN: ${{ inputs.github_token }}
 
     #Increase Version Name NON-PATCH
     - name: Bump version major-minor
@@ -96,16 +96,15 @@ runs:
       shell: bash
       run: |
         if [ -n "$(git status --porcelain)" ]; then
-          git diff
           git commit -am "Releasing ${{env.RELEASE_VERSION}}"
           git push --force
         fi
       env:
-        GH_TOKEN: ${{ inputs.github_token }}
+        GITHUB_TOKEN: ${{ inputs.github_token }}
 
     #Create Release Tag
     - name: Create Release
       shell: bash
       run: gh release create "v${{ env.RELEASE_VERSION }}" --generate-notes
       env:
-        GH_TOKEN: ${{ inputs.github_token }}
+        GITHUB_TOKEN: ${{ inputs.github_token }}
