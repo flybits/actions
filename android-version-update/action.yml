@@ -38,7 +38,6 @@ runs:
         git config user.name "${{ inputs.who_trigger }}"
         git config user.email "${{ inputs.who_trigger }}"
       env:
-        GITHUB_TOKEN: ${{ inputs.github_token }}
         GH_TOKEN: ${{ inputs.github_token }}
 
     #Increase Version Name NON-PATCH
@@ -96,7 +95,6 @@ runs:
           git push --force
         fi
       env:
-        GITHUB_TOKEN: ${{ inputs.github_token }}
         GH_TOKEN: ${{ inputs.github_token }}
 
     #Create Release Tag
@@ -104,5 +102,4 @@ runs:
       shell: bash
       run: gh release create "v${{ env.RELEASE_VERSION }}" --generate-notes
       env:
-        GITHUB_TOKEN: ${{ inputs.github_token }}
         GH_TOKEN: ${{ inputs.github_token }}
