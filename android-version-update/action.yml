@@ -80,7 +80,7 @@ runs:
         sed -i "s/versionCode [0-9]*/versionCode $current_version_code/g" app/build.gradle
         sed -i "s/versionName \"[^\"]*\"/versionName \"${{ env.RELEASE_VERSION }}\"/g" app/build.gradle
         current_version_code=$((current_version_code+1))
-        echo "${{ env.current_version_code }}" > VERSION_CODE
+        echo "$current_version_code" > VERSION_CODE
         echo "${{ env.NEXT_VERSION }}" > VERSION
     
     #Commit Version Increase Code
