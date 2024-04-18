@@ -84,6 +84,14 @@ runs:
         current_version_code=$((current_version_code+1))
         echo "$current_version_code" > VERSION_CODE
         echo "${{ env.NEXT_VERSION }}" > VERSION
+
+
+    #Create Release Tag
+    - name: Create Release
+      shell: bash
+      run: gh release create "v${{ env.RELEASE_VERSION }}" --generate-notes
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
     
     #Commit Version Increase Code
     - name: Commit and push changes
@@ -94,12 +102,5 @@ runs:
           git commit -am "Releasing ${{env.RELEASE_VERSION}}"
           git push --force
         fi
-      env:
-        GITHUB_TOKEN: ${{ inputs.github_token }}
-
-    #Create Release Tag
-    - name: Create Release
-      shell: bash
-      run: gh release create "v${{ env.RELEASE_VERSION }}" --generate-notes
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
