@@ -121,7 +121,7 @@ runs:
         echo "$current_version_code" > VERSION_CODE
         echo "${{ env.NEXT_VERSION }}" > VERSION
 
-    #JDK 1.8
+    #JDK 18
     - name: Set up JDK 18
       uses: actions/setup-java@v4
       with:
