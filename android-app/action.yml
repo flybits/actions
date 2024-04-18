@@ -17,6 +17,9 @@ inputs:
   service_account_json:
     description: The JSON file for the service account
     required: true
+  package_name:
+    description: The package name of the Android application being uploaded to the Play Store
+    required: true
 
 runs:
   using: "composite"
