@@ -84,6 +84,6 @@ runs:
       uses: r0adkll/upload-google-play@v1
       with:
         serviceAccountJson: service_account.json
-        packageName: com.flybits.android.life.app
+        packageName: ${{ inputs.package_name }}
         releaseFiles: ${{steps.sign_app.outputs.signedReleaseFile}}
         track: internal
