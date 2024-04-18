@@ -34,8 +34,9 @@ runs:
     #SETUP GIT LOCAL USER
     - name: Setup Git
       shell: bash
-      run: git config user.name "${{ inputs.who_trigger }}"
-      run: git config user.email "${{ inputs.who_trigger }}"
+      run: |
+        git config user.name "${{ inputs.who_trigger }}"
+        git config user.email "${{ inputs.who_trigger }}"
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
 
