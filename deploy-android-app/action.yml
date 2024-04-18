@@ -45,18 +45,27 @@ runs:
   using: "composite"
   steps:
 
+    #Validate Inputs
+    - name: Inputs validation
+      shell: bash
+      run: |
+        [[ "${{ inputs.github_token }}" ]] || { echo "github_token input is empty" ; exit 1; }
+        [[ "${{ inputs.branch }}" =~ ^(main)$ ]] || { echo "BRANCH ERROR: This pipeline it's only available for main branch!" ; exit 1; }
+        [[ "${{ inputs.version }}" ]] || { echo "version input is empty" ; exit 1; }
+        [[ "${{ inputs.who_trigger }}" ]] || { echo "who_trigger input is empty" ; exit 1; }
+        [[ "${{ inputs.keystore_file }}" ]] || { echo "keystore_file input is empty" ; exit 1; }
+        [[ "${{ inputs.alias }}" ]] || { echo "alias input is empty" ; exit 1; }
+        [[ "${{ inputs.keystore_password }}" ]] || { echo "keystore_password input is empty" ; exit 1; }
+        [[ "${{ inputs.alias_password }}" ]] || { echo "alias_password input is empty" ; exit 1; }
+        [[ "${{ inputs.service_account_json }}" ]] || { echo "service_account_json input is empty" ; exit 1; }
+        [[ "${{ inputs.package_name }}" ]] || { echo "package_name input is empty" ; exit 1; }
+
     #Checkout Code
     - name: Checkout Code
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
         token: ${{ inputs.github_token }}
-
-    #Validate Inputs
-    - name: Inputs validation
-      shell: bash
-      run: |
-        [[ "${{ inputs.github_token }}" ]] || { echo "github_token input is empty" ; exit 1; }
 
     #SETUP GIT LOCAL USER
     - name: Setup Git
@@ -111,33 +120,33 @@ runs:
         current_version_code=$((current_version_code+1))
         echo "$current_version_code" > VERSION_CODE
         echo "${{ env.NEXT_VERSION }}" > VERSION
-   
-      #JDK 1.8
-    - name: Set up JDK 1.8
+
+    #JDK 1.8
+    - name: Set up JDK 18
       uses: actions/setup-java@v4
       with:
         distribution: 'oracle'
         java-version: '18'
         cache: 'gradle'
 
-      #GRANT RIGHTS
+    #GRANT RIGHTS
     - name: Grant rights
       shell: bash
       run: chmod +x build.gradle
 
-      #BUILD GRADLE
+    #BUILD GRADLE
     - name: Build with Gradle
       shell: bash
       id: build
       run: ./gradlew build
 
-      #BUILD RELEASE GRADLE
+    #BUILD RELEASE GRADLE
     - name: Build Release
       shell: bash
       id: buildRelease
       run: ./gradlew bundleRelease
 
-      #Set up Android Build Tools
+    #Set up Android Build Tools
     - name: Setup build tool version variable
       shell: bash
       run: |
@@ -145,7 +154,7 @@ runs:
         echo "BUILD_TOOL_VERSION=$BUILD_TOOL_VERSION" >> $GITHUB_ENV
         echo Last build tool version is: $BUILD_TOOL_VERSION
 
-      #SIGN APK
+    #SIGN APK
     - name: Sign AAB
       id: sign_app
       uses: r0adkll/sign-android-release@v1
@@ -158,13 +167,13 @@ runs:
       env:
         BUILD_TOOLS_VERSION: ${{ env.BUILD_TOOL_VERSION }}
 
-      #CREATE JSON SERVICE ACCOUNT
+    #CREATE JSON SERVICE ACCOUNT
     - name: Create service_account.json
       shell: bash
       id: createServiceAccount
       run: echo '${{ inputs.service_account_json }}' > service_account.json
 
-      #UPLOAD TO PLAY STORE
+    #UPLOAD TO PLAY STORE
     - name: Deploy to Play Store (BETA)
       id: deploy
       uses: r0adkll/upload-google-play@v1
@@ -173,7 +182,7 @@ runs:
         packageName: ${{ inputs.package_name }}
         releaseFiles: ${{steps.sign_app.outputs.signedReleaseFile}}
         track: internal
-    
+
     #Commit Version Increase Code
     - name: Commit and push changes
       shell: bash
