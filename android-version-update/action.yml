@@ -88,7 +88,14 @@ runs:
       shell: bash
       run: |
         git diff
-        git commit -am "Bump version code and change version name"
+        git commit -am "Releasing ${{env.RELEASE_VERSION}}"
         git push --force
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+
+    #Create Release Tag
+    - name: Create Release
+      shell: bash
+      run: gh release create "v${{ env.RELEASE_VERSION }}" --generate-notes
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
