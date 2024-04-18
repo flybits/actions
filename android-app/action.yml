@@ -2,9 +2,6 @@ name: Deployment
 author: Petar Kramaric
 description: GitHub action for deploying android applications
 inputs:
-  github_token:
-    description: A GitHub personal access token with repo scope to access private repositories.
-    required: true
   keystore_file:
     description: A keystore file in base64
     required: true
@@ -20,23 +17,6 @@ inputs:
   service_account_json:
     description: The JSON file for the service account
     required: true
-  branch:
-    description: Which branch is running the job
-    required: true
-    type: choice
-    options:
-      - main
-  version:
-    description: "Semver type of new version (major / minor / patch)"
-    required: true
-    type: choice
-    options:
-      - patch
-      - minor
-      - major
-  who_trigger:
-    description: "Who trigger the pipeline"
-    required: true
 
 runs:
   using: "composite"
@@ -45,15 +25,7 @@ runs:
     #Checkout Code
     - name: Checkout Code
       uses: actions/checkout@v4
-
-    #Validate Inputs
-    - name: Inputs validation
-      shell: bash
-      run: |
-        current_version=$(cat VERSION_NAME)
-        [[ "${{ inputs.github_token }}" ]] || { echo "github_token input is empty" ; exit 1; }
-        [[ "${{ inputs.branch }}" ]] || { echo "branch input is empty" ; exit 1; }
-       
+   
       #JDK 1.8
     - name: Set up JDK 1.8
       uses: actions/setup-java@v4
