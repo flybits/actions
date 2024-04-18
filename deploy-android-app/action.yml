@@ -1,0 +1,193 @@
+name: Deployment
+author: Petar Kramaric
+description: GitHub action for deploying android applications
+inputs:
+github_token:
+    description: A GitHub personal access token with repo scope to access private repositories.
+    required: true
+  branch:
+    description: Which branch is running the job
+    required: true
+    type: choice
+    options:
+      - main
+  version:
+    description: "Semver type of new version (major / minor / patch)"
+    required: true
+    type: choice
+    options:
+      - patch
+      - minor
+      - major
+  who_trigger:
+    description: "Who trigger the pipeline"
+    required: true
+  keystore_file:
+    description: A keystore file in base64
+    required: true
+  alias:
+    description: An alias used for the keystore file
+    required: true
+  keystore_password:
+    description: The password used for the keystore
+    required: true
+  alias_password:
+    description: The password used for the alias
+    required: true
+  service_account_json:
+    description: The JSON file for the service account
+    required: true
+  package_name:
+    description: The package name of the Android application being uploaded to the Play Store
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+
+    #Checkout Code
+    - name: Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ inputs.github_token }}
+
+    #Validate Inputs
+    - name: Inputs validation
+      shell: bash
+      run: |
+        [[ "${{ inputs.github_token }}" ]] || { echo "github_token input is empty" ; exit 1; }
+
+    #SETUP GIT LOCAL USER
+    - name: Setup Git
+      shell: bash
+      run: |
+        git config user.name "${{ inputs.who_trigger }}"
+        git config user.email "${{ inputs.who_trigger }}"
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+
+    #Increase Version Name NON-PATCH
+    - name: Bump version major-minor
+      uses: HardNorth/github-version-generate@v1.4.0
+      if: inputs.version != 'patch'
+      with:
+        version-source: file
+        version-file: VERSION
+        release-version-cut-prerelease: true
+        next-version-increment-patch: true
+        next-version-increment-minor: ${{ contains(inputs.version, 'minor') }}
+        next-version-increment-major: ${{ contains(inputs.version, 'major') }}
+
+    #UPDATE Version Name NON-PATCH
+    - name: Update version
+      shell: bash
+      if: inputs.version != 'patch'
+      run: |
+        echo "${{ env.NEXT_VERSION }}" > VERSION
+
+    #Increase Version Name PATCH
+    - name: Generate versions
+      uses: HardNorth/github-version-generate@v1.4.0
+      with:
+        version-source: file
+        version-file: VERSION
+        release-version-cut-prerelease: true
+        next-version-increment-patch: true
+        next-version-increment-minor: false
+        next-version-increment-major: false
+
+    #Increase Version in Build.gradle file
+    - name: Increase version code and change version name
+      shell: bash
+      run: |
+        echo "${{ env.RELEASE_VERSION }}" > VERSION
+        current_version_code=$(cat VERSION_CODE)
+        echo Version Code: $current_version_code
+        echo Version Name: ${{ env.RELEASE_VERSION }}
+
+        sed -i "s/versionCode [0-9]*/versionCode $current_version_code/g" app/build.gradle
+        sed -i "s/versionName \"[^\"]*\"/versionName \"${{ env.RELEASE_VERSION }}\"/g" app/build.gradle
+        current_version_code=$((current_version_code+1))
+        echo "$current_version_code" > VERSION_CODE
+        echo "${{ env.NEXT_VERSION }}" > VERSION
+   
+      #JDK 1.8
+    - name: Set up JDK 1.8
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'oracle'
+        java-version: '18'
+        cache: 'gradle'
+
+      #GRANT RIGHTS
+    - name: Grant rights
+      shell: bash
+      run: chmod +x build.gradle
+
+      #BUILD GRADLE
+    - name: Build with Gradle
+      shell: bash
+      id: build
+      run: ./gradlew build
+
+      #BUILD RELEASE GRADLE
+    - name: Build Release
+      shell: bash
+      id: buildRelease
+      run: ./gradlew bundleRelease
+
+      #Set up Android Build Tools
+    - name: Setup build tool version variable
+      shell: bash
+      run: |
+        BUILD_TOOL_VERSION=$(ls /usr/local/lib/android/sdk/build-tools/ | tail -n 1)
+        echo "BUILD_TOOL_VERSION=$BUILD_TOOL_VERSION" >> $GITHUB_ENV
+        echo Last build tool version is: $BUILD_TOOL_VERSION
+
+      #SIGN APK
+    - name: Sign AAB
+      id: sign_app
+      uses: r0adkll/sign-android-release@v1
+      with:
+        releaseDirectory: app/build/outputs/bundle/release
+        signingKeyBase64: ${{ inputs.keystore_file }}
+        alias: ${{ inputs.alias }}
+        keyStorePassword: ${{ inputs.keystore_password }}
+        keyPassword: ${{ inputs.alias_password }}
+      env:
+        BUILD_TOOLS_VERSION: ${{ env.BUILD_TOOL_VERSION }}
+
+      #CREATE JSON SERVICE ACCOUNT
+    - name: Create service_account.json
+      shell: bash
+      id: createServiceAccount
+      run: echo '${{ inputs.service_account_json }}' > service_account.json
+
+      #UPLOAD TO PLAY STORE
+    - name: Deploy to Play Store (BETA)
+      id: deploy
+      uses: r0adkll/upload-google-play@v1
+      with:
+        serviceAccountJson: service_account.json
+        packageName: ${{ inputs.package_name }}
+        releaseFiles: ${{steps.sign_app.outputs.signedReleaseFile}}
+        track: internal
+    
+    #Commit Version Increase Code
+    - name: Commit and push changes
+      shell: bash
+      run: |
+        if [ -n "$(git status --porcelain)" ]; then
+          git commit -am "Releasing ${{env.RELEASE_VERSION}}"
+          git push --force
+        fi
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
+
+    #Create Release Tag
+    - name: Create Release
+      shell: bash
+      run: gh release create "v${{ env.RELEASE_VERSION }}" --generate-notes
+      env:
+        GITHUB_TOKEN: ${{ inputs.github_token }}
