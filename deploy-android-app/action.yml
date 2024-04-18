@@ -2,7 +2,7 @@ name: Deployment
 author: Petar Kramaric
 description: GitHub action for deploying android applications
 inputs:
-github_token:
+  github_token:
     description: A GitHub personal access token with repo scope to access private repositories.
     required: true
   branch:
