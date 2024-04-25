@@ -19,7 +19,7 @@ runs:
   using: 'composite'
   steps:
     - name: Install Node and NPM packages
-      uses: flybits/front-end-github-actions/node-npm/install@main
+      uses: flybits/actions/frontend/node-npm/install@main
       with:
         github-personal-access-token: ${{ inputs.github-personal-access-token }}
 
@@ -29,7 +29,7 @@ runs:
 
     - if: ${{ failure() }}
       name: Notify Slack
-      uses: flybits/front-end-github-actions/slack/job-failure@main
+      uses: flybits/actions/frontend/slack/job-failure@main
       with:
         bot-token: ${{ inputs.slack-bot-token }}
         message: '🧐 Linting failed'

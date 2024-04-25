@@ -39,7 +39,7 @@ runs:
         token: ${{ inputs.github-personal-access-token }}
 
     - name: Run Cypress tests
-      uses: flybits/front-end-github-actions/cypress/test@main
+      uses: flybits/actions/frontend/cypress/test@main
       with:
         cypress-spec: ${{ inputs.cypress-spec }}
         flybits-project-environment: ${{ inputs.flybits-environment }}
@@ -47,7 +47,7 @@ runs:
 
     - if: ${{ failure() }}
       name: Notify Slack
-      uses: flybits/front-end-github-actions/slack/job-failure@main
+      uses: flybits/actions/frontend/slack/job-failure@main
       with:
         bot-token: ${{ inputs.slack-bot-token }}
         message: '😒 Testing failed'

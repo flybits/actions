@@ -68,7 +68,7 @@ runs:
 
     - if: ${{ failure() }}
       name: Notify Slack
-      uses: flybits/front-end-github-actions/slack/job-failure@main
+      uses: flybits/actions/frontend/slack/job-failure@main
       with:
         bot-token: ${{ inputs.slack-bot-token }}
         message: '🤔 AWS sync failed'
