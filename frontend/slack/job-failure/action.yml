@@ -1,0 +1,61 @@
+name: Notify Slack
+description: Publishes a message to Slack when a job fails
+
+inputs:
+  bot-token:
+    description: 'The bot token to use for posting to Slack'
+    required: true
+
+  channel-id:
+    description: 'The Slack channel to post the message to'
+    default: 'C9YA9JUKG'
+    required: false
+
+  message:
+    description: 'The message to post to Slack'
+    default: '☠️ Job failed'
+    required: false
+
+  update-ts:
+    description: 'The timestamp of the Slack message to update'
+    required: false
+
+  web-app-name:
+    description: 'The name of your web application'
+    default: ${{ github.event.repository.name }}
+    required: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Notify Slack
+      uses: 'slackapi/slack-github-action@v1.25.0'
+      env:
+        SLACK_BOT_TOKEN: ${{ inputs.bot-token }}
+      with:
+        channel-id: ${{ inputs.channel-id }}
+        update-ts: ${{ inputs.update-ts }}
+        payload: |
+          {
+            "attachments": [
+              {
+                "title": "${{ inputs.message }}",
+                "title_link": "${{ github.event.repository.url }}/actions/runs/${{ github.run_id }}",
+                "color": "ff0000",
+                "fields": [
+                  {
+                    "title": "Web Applicaiton",
+                    "short": true,
+                    "value": "${{ inputs.web-app-name }}"
+                  },
+                  {
+                    "title": "Status",
+                    "short": true,
+                    "value": "Failed :dead: "
+                  }
+                ],
+                "footer_icon": "https://github.com/${{ github.triggering_actor }}.png",
+                "footer": "By ${{ github.actor }}"
+              }
+            ]
+          }

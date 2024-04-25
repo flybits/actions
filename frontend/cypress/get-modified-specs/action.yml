@@ -1,0 +1,34 @@
+name: Get modified specs
+description: Outputs a list of modified spec files
+
+outputs:
+  files:
+    description: A list of modified spec files
+    value: ${{ steps.modified-specs.outputs.files }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Get modified specs
+      id: modified-specs
+      shell: bash
+      run: |
+        git fetch --no-tags --depth=1 origin ${{ github.base_ref }}
+        git fetch --no-tags --depth=1 origin ${{ github.head_ref }}
+
+        git checkout origin/${{ github.base_ref }}
+        git checkout origin/${{ github.head_ref }}
+        git checkout ${{ github.sha }}
+
+        MODIFIED_SPECS=$(git diff --name-only origin/${{ github.base_ref }} origin/${{ github.head_ref }} -- cypress/e2e)
+
+        if [ -z "$MODIFIED_SPECS" ]; then
+          echo -e "\nFound no modified specs"
+        else
+          echo -e "\nFound the following modified specs:"
+          echo $MODIFIED_SPECS
+
+          echo "files<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$MODIFIED_SPECS" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+        fi

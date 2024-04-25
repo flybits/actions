@@ -1,0 +1,75 @@
+name: AWS Sync
+description: Uploads the 'dist' folder to an S3 bucket and invalidates CloudFront cache
+
+inputs:
+  aws-cloudfront-distribution-id:
+    description: 'The ID of the CloudFront distribution'
+    required: true
+
+  aws-iam-role:
+    description: 'The IAM role to assume'
+    required: true
+
+  aws-s3-bucket-name:
+    description: 'The name of the S3 bucket'
+    required: true
+
+  aws-s3-bucket-region:
+    description: 'The region of the S3 bucket'
+    required: true
+
+  dist-folder-name:
+    description: 'The name of the folder to sync with S3'
+    default: ${{ github.event.repository.name }}
+    required: false
+
+  dest-folder-name:
+    description: 'The name of the folder to copy files to'
+    required: false
+
+  slack-bot-token:
+    description: 'A bot token to publish a message on Slack'
+    required: true
+
+  web-app-name:
+    description: 'A human-readable name of your web application'
+    default: ${{ github.event.repository.name }}
+    required: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Configure AWS credentials
+      uses: aws-actions/configure-aws-credentials@v4
+      with:
+        role-to-assume: ${{ inputs.aws-iam-role }}
+        aws-region: ${{ inputs.aws-s3-bucket-region }}
+
+    - name: Copy "dist" folder's contents to S3 bucket
+      shell: bash
+      run: aws s3 sync ${{ inputs.dist-folder-name }} s3://${{ inputs.aws-s3-bucket-name }} --delete
+
+    - name: Invalidate CloudFront cache
+      shell: bash
+      run: |
+        INVALIDATION_JSON=$(aws cloudfront create-invalidation --distribution-id ${{ inputs.aws-cloudfront-distribution-id }} --paths "/*")
+        INVALIDATION_ID=$(echo $INVALIDATION_JSON | jq -r '.Invalidation.Id')
+        INVALIDATION_STATUS=$(echo $INVALIDATION_JSON | jq -r '.Invalidation.Status')
+
+        echo "Waiting for CloudFront invalidation to complete..."
+
+        while [ "$INVALIDATION_STATUS" != "Completed" ]; do
+          INVALIDATION_JSON=$(aws cloudfront get-invalidation --distribution-id ${{ inputs.aws-cloudfront-distribution-id }} --id $INVALIDATION_ID)
+          INVALIDATION_STATUS=$(echo $INVALIDATION_JSON | jq -r '.Invalidation.Status')
+
+          echo "Status: $INVALIDATION_STATUS"
+          sleep 5
+        done
+
+    - if: ${{ failure() }}
+      name: Notify Slack
+      uses: flybits/front-end-github-actions/slack/job-failure@main
+      with:
+        bot-token: ${{ inputs.slack-bot-token }}
+        message: '🤔 AWS sync failed'
+        web-app-name: ${{ inputs.web-app-name }}
