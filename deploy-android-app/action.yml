@@ -56,7 +56,6 @@ runs:
         [[ "${{ inputs.alias }}" ]] || { echo "alias input is empty" ; exit 1; }
         [[ "${{ inputs.keystore_password }}" ]] || { echo "keystore_password input is empty" ; exit 1; }
         [[ "${{ inputs.alias_password }}" ]] || { echo "alias_password input is empty" ; exit 1; }
-        [[ "${{ inputs.service_account_json }}" ]] || { echo "service_account_json input is empty" ; exit 1; }
         [[ "${{ inputs.package_name }}" ]] || { echo "package_name input is empty" ; exit 1; }
         [[ "${{ inputs.github_token }}" ]] || { echo "github_token input is empty" ; exit 1; }
 
