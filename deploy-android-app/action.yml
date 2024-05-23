@@ -179,6 +179,7 @@ runs:
       with:
         serviceAccountJson: service_account.json
         packageName: ${{ inputs.package_name }}
+        changesNotSentForReview: true
         releaseFiles: ${{steps.sign_app.outputs.signedReleaseFile}}
         track: internal
 
