@@ -1,0 +1,40 @@
+name: ScanFrontend
+description: Vulnerability Scanning Service for All Production Frontend Repos
+inputs:
+    github_token:
+      description: A GitHub personal access token with repo scope to access private repositories.
+      required: true
+    environment:
+      description: 'The name of the environment to deploy to'
+      type: string
+      required: true
+
+runs:
+  using: "composite"
+  steps:
+    #Checkout
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+        token: ${{ inputs.github_token }}
+
+    #Install Node
+    - name: Install Node and NPM packages
+      uses: flybits/frontend-github-actions/node-npm/install@main
+      with:
+        github-personal-access-token: ${{ inputs.github_token }}
+
+    #Build
+    - name: Run build
+      shell: bash
+      run: npx nx build:${{ inputs.environment }}
+
+    #Initializes the CodeQL tools for scanning.
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: javascript-typescript
+
+    #Run codeql Analysis
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
