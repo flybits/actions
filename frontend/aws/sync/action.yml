@@ -39,6 +39,15 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Validate inputs
+      shell: bash
+      run: |
+        [[ "${{ inputs.aws-cloudfront-distribution-id }}" ]] || { echo "aws-cloudfront-distribution-id input is empty" ; exit 1; }
+        [[ "${{ inputs.aws-iam-role }}" ]] || { echo "aws-iam-role input is empty" ; exit 1; }
+        [[ "${{ inputs.aws-s3-bucket-name }}" ]] || { echo "aws-s3-bucket-name input is empty" ; exit 1; }
+        [[ "${{ inputs.aws-s3-bucket-region }}" ]] || { echo "aws-s3-bucket-region input is empty" ; exit 1; }
+        [[ "${{ inputs.slack-bot-token }}" ]] || { echo "slack-bot-token input is empty" ; exit 1; }
+
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
