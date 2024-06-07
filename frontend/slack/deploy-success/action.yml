@@ -1,0 +1,59 @@
+name: Notify Slack
+description: Publishes a message to Slack after successful deployment
+
+inputs:
+  bot-token:
+    description: 'The bot token to use for posting to Slack'
+    required: true
+
+  channel-id:
+    description: 'The Slack channel to post the message to'
+    default: 'C9YA9JUKG'
+    required: false
+
+  update-ts:
+    description: 'The timestamp of the Slack message to update'
+    required: false
+
+  web-app-name:
+    description: 'The name of your web application'
+    default: ${{ github.event.repository.name }}
+    required: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate inputs
+      shell: bash
+      run: |
+        [[ "${{ inputs.bot-token }}" ]] || { echo "bot-token input is empty" ; exit 1; }
+
+    - name: Notify Slack
+      uses: slackapi/slack-github-action@v1.25.0
+      env:
+        SLACK_BOT_TOKEN: ${{ inputs.bot-token }}
+      with:
+        channel-id: ${{ inputs.channel-id }}
+        update-ts: ${{ inputs.update-ts }}
+        payload: |
+          {
+            "attachments": [
+              {
+                "color": "007A5A",
+                "fields": [
+                  {
+                    "title": "Web Applicaiton",
+                    "short": true,
+                    "value": "${{ inputs.web-app-name }}"
+                  },
+                  {
+                    "title": "Status",
+                    "short": true,
+                    "value": "Deployed 🥂"
+                  }
+                ],
+                "footer_icon": "https://github.com/${{ github.triggering_actor }}.png",
+                "footer": "By ${{ github.actor }}"
+              }
+            ]
+          }

@@ -1,0 +1,42 @@
+name: Test
+description: Runs nx's test command
+
+inputs:
+  github-personal-access-token:
+    description: 'A token used for accessing private NPM packages (published by Flybits Inc.)'
+    required: true
+
+  slack-bot-token:
+    description: 'A bot token to publish a message on Slack'
+    required: true
+
+  web-app-name:
+    description: 'A human-readable name of your web application'
+    default: ${{ github.event.repository.name }}
+    required: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate inputs
+      shell: bash
+      run: |
+        [[ "${{ inputs.github-personal-access-token }}" ]] || { echo "github-personal-access-token input is empty" ; exit 1; }
+        [[ "${{ inputs.slack-bot-token }}" ]] || { echo "slack-bot-token input is empty" ; exit 1; }
+
+    - name: Install Node and NPM packages
+      uses: flybits/actions/frontend/node-npm/install@main
+      with:
+        github-personal-access-token: ${{ inputs.github-personal-access-token }}
+
+    - name: Run test
+      shell: bash
+      run: npx nx test
+
+    - if: ${{ failure() }}
+      name: Notify Slack
+      uses: flybits/actions/frontend/slack/job-failure@main
+      with:
+        bot-token: ${{ inputs.slack-bot-token }}
+        message: '😒 Testing failed'
+        web-app-name: ${{ inputs.web-app-name }}

@@ -1,0 +1,54 @@
+name: Test
+description: Runs all tests
+
+inputs:
+  cypress-spec:
+    description: 'A path/glob pattern that will determine which tests should be executed'
+    required: false
+
+  flybits-project-environment:
+    description: 'The environment in which the Flybits project is created'
+    required: true
+
+  flybits-project-jwt:
+    description: 'A JSON Web Token to access Experience Studio'
+    required: true
+
+  github-personal-access-token:
+    description: 'A token used for accessing private repository (created under Flybits Inc. organization)'
+    required: true
+
+  slack-bot-token:
+    description: 'A bot token to publish a message on Slack'
+    required: true
+
+  web-app-name:
+    description: 'A human-readable name of your web application'
+    default: ${{ github.event.repository.name }}
+    required: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout the repository
+      if: ${{ inputs.github-personal-access-token }}
+      uses: actions/checkout@v4
+      with:
+        ref: refs/heads/main
+        repository: 'flybits/frontend-cypress'
+        token: ${{ inputs.github-personal-access-token }}
+
+    - name: Run Cypress tests
+      uses: flybits/actions/frontend/cypress/test@main
+      with:
+        cypress-spec: ${{ inputs.cypress-spec }}
+        flybits-project-environment: ${{ inputs.flybits-environment }}
+        flybits-project-jwt: ${{ inputs.flybits-project-jwt }}
+
+    - if: ${{ failure() }}
+      name: Notify Slack
+      uses: flybits/actions/frontend/slack/job-failure@main
+      with:
+        bot-token: ${{ inputs.slack-bot-token }}
+        message: '😒 Testing failed'
+        web-app-name: ${{ inputs.web-app-name }}

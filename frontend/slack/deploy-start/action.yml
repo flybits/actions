@@ -1,0 +1,91 @@
+name: Notify Slack
+description: Publishes a message to Slack when a deploy workflow starts
+
+inputs:
+  bot-token:
+    description: 'The bot token to use for posting to Slack'
+    required: true
+
+  channel-id:
+    description: 'The Slack channel to post the message to'
+    default: 'C9YA9JUKG'
+    required: false
+
+  web-app-name:
+    description: 'The name of your web application'
+    default: ${{ github.event.repository.name }}
+    required: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate inputs
+      shell: bash
+      run: |
+        [[ "${{ inputs.bot-token }}" ]] || { echo "bot-token input is empty" ; exit 1; }
+
+    - name: Notify Slack
+      uses: slackapi/slack-github-action@v1.25.0
+      env:
+        SLACK_BOT_TOKEN: ${{ inputs.bot-token }}
+      with:
+        channel-id: ${{ inputs.channel-id }}
+        payload: |
+          {
+            "blocks": [
+              {
+                "type": "context",
+                "elements": [
+                  {
+                    "type": "image",
+                    "image_url": "https://github.com/${{ github.triggering_actor }}.png",
+                    "alt_text": "${{ github.triggering_actor }}"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "Deploying <${{ github.event.repository.html_url }}|${{ inputs.web-app-name }}> to *staging*"
+                  }
+                ]
+              },
+              {
+                "type": "divider"
+              },
+              {
+                "type": "section",
+                "fields": [
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Triggered By*\n${{ github.triggering_actor }}"
+                  },
+                  {
+                    "type": "mrkdwn",
+                    "text": "*Branch/Tag*\n${{ github.ref_name }}"
+                  }
+                ]
+              },
+              {
+                "type": "actions",
+                "elements": [
+                  {
+                    "type": "button",
+                    "text": {
+                      "type": "plain_text",
+                      "emoji": true,
+                      "text": "Workflow"
+                    },
+                    "style": "primary",
+                    "url": "${{ github.event.repository.url }}/actions/runs/${{ github.run_id }}"
+                  },
+                  {
+                    "type": "button",
+                    "text": {
+                      "type": "plain_text",
+                      "emoji": true,
+                      "text": "Pull Request / Commit"
+                    },
+                    "url": "${{ github.event.pull_request.html_url || github.event.head_commit.url }}"
+                  }
+                ]
+              }
+            ]
+          }

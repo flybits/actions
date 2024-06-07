@@ -1,0 +1,23 @@
+name: Verify pull request's title
+description: Enforces that the title of a pull request must include the Jira issue key
+
+inputs:
+  github-personal-access-token:
+    description: 'A token used for accessing private repository (created under Flybits Inc. organization)'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate inputs
+      shell: bash
+      run: |
+        [[ "${{ inputs.github-personal-access-token }}" ]] || { echo "github-personal-access-token input is empty" ; exit 1; }
+
+    - name: Verify if the Jira issue key is present in the title
+      uses: flybits/action-pr-title@v1.0.2
+      with:
+        regex: '(\[|\{|\()?([a-zA-Z]{2,4})([- ])(\d+)(\]|\}|\))?.*'
+        prefix_case_sensitive: false
+        min_length: 8
+        github_token: ${{ inputs.github-personal-access-token }}

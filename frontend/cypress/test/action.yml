@@ -1,0 +1,38 @@
+name: Test
+description: Runs Cypress tests and saves their artifacts in case of failure
+
+inputs:
+  cypress-spec:
+    description: 'A path/glob pattern that will determine which tests should be executed'
+    required: false
+
+  flybits-project-environment:
+    description: 'The environment in which the Flybits project is created'
+    required: true
+
+  flybits-project-jwt:
+    description: 'A JSON Web Token to access Experience Studio'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Run tests
+      uses: cypress-io/github-action@v6
+      with:
+        browser: chrome
+        spec: ${{ inputs.cypress-spec }}
+      env:
+        CYPRESS_environment: ${{ inputs.flybits-project-environment }}
+        CYPRESS_jwt: ${{ inputs.flybits-project-jwt }}
+
+    - name: Store artifacts
+      if: failure()
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-cypress-artifacts
+        retention-days: 2
+        path: |
+          cypress/downloads
+          cypress/screenshots
+          cypress/videos
