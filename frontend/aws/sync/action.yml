@@ -47,7 +47,12 @@ runs:
 
     - name: Copy "dist" folder's contents to S3 bucket
       shell: bash
-      run: aws s3 sync ${{ inputs.dist-folder-name }} s3://${{ inputs.aws-s3-bucket-name }} --delete
+            run: |
+        aws s3 sync ${{ inputs.dist-folder-name }} s3://${{ inputs.aws-s3-bucket-name }} --delete
+        if [ $? -ne 0 ]; then
+          echo "Failed to sync folder with S3 bucket"
+          exit 1
+        fi
 
     - name: Invalidate CloudFront cache
       shell: bash
