@@ -64,7 +64,11 @@ runs:
         echo "Waiting for CloudFront invalidation to complete..."
 
         while [ "$INVALIDATION_STATUS" != "Completed" ]; do
-          INVALIDATION_JSON=$(aws cloudfront get-invalidation --distribution-id ${{ inputs.aws-cloudfront-distribution-id }} --id $INVALIDATION_ID)
+                    if [ $? -ne 0 ]; then
+            echo "Failed to get CloudFront invalidation status"
+            exit 1
+          fi
+
           INVALIDATION_STATUS=$(echo $INVALIDATION_JSON | jq -r '.Invalidation.Status')
 
           echo "Status: $INVALIDATION_STATUS"
