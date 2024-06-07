@@ -9,6 +9,11 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Validate inputs
+      shell: bash
+      run: |
+        [[ "${{ inputs.github-personal-access-token }}" ]] || { echo "github-personal-access-token input is empty" ; exit 1; }
+
     - name: Verify if the Jira issue key is present in the title
       uses: flybits/action-pr-title@v1.0.2
       with:
