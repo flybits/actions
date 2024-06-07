@@ -18,6 +18,12 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Validate inputs
+      shell: bash
+      run: |
+        [[ "${{ inputs.github-personal-access-token }}" ]] || { echo "github-personal-access-token input is empty" ; exit 1; }
+        [[ "${{ inputs.slack-bot-token }}" ]] || { echo "slack-bot-token input is empty" ; exit 1; }
+
     - name: Install Node and NPM packages
       uses: flybits/actions/frontend/node-npm/install@main
       with:
