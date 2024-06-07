@@ -23,6 +23,11 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Validate inputs
+      shell: bash
+      run: |
+        [[ "${{ inputs.bot-token }}" ]] || { echo "bot-token input is empty" ; exit 1; }
+
     - name: Notify Slack
       uses: slackapi/slack-github-action@v1.25.0
       env:
