@@ -19,6 +19,13 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    # Validate Inputs
+    - name: Validate Github Actions' inputs
+      shell: bash
+      run: |
+        [[ "${{ inputs.environment }}" ]] || { echo "environment input is empty"; exit 1; }
+        [[ "${{ inputs.github_token }}" ]] || { echo "github_token input is empty"; exit 1; }
+
     #Checkout
     - uses: actions/checkout@v4
       with:
