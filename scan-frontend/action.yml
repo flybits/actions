@@ -16,6 +16,10 @@ inputs:
     required: false
     type: string
 
+  slack-bot-token:
+    description: 'A bot token to publish a message on Slack'
+    required: true
+
 runs:
   using: 'composite'
   steps:
