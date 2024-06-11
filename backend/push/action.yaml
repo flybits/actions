@@ -20,6 +20,17 @@ inputs:
   who_trigger:
     description: "Who trigger the pipeline"
     required: true
+  specific_deployment:
+    description: "Is this release for a specific deployment"
+    required: false
+    default: false
+  type:
+    description: "Which server are we deploying to"
+    required: true
+    options:
+      - dev
+      - staging
+      - production
 
 runs:
   using: "composite"
@@ -105,12 +116,38 @@ runs:
           fi
         }
         
-        if [[ $VERSION =~ \.dev$ ]]; then
+        BRANCH=main
+
+        # development release
+        if [[ ${{ inputs.type }} == "dev" ]]; then
           echo "Development release..."
           BRANCH=develop
           git checkout $BRANCH
           cd env/development
         
+        # staging release
+        elif [[ ${{ inputs.type }} == "staging" ]]; then
+          echo "Development release..."
+          BRANCH=develop
+          git checkout $BRANCH
+          cd env/development
+          update_image_and_push
+          cd ../../  # return to root directory
+
+          echo "Staging release..."
+          BRANCH=main
+          git checkout $BRANCH
+          cd env/staging
+
+        elif [[ ${{ inputs.type }} == "production" ]]; then
+          echo "Production release..."
+          cd base
+          kustomize edit set image $TAG
+          if [ "${{ inputs.specific_deployment }}" == "true" ]; then
+            NAME_OF_DEPLOYMENT=$(echo $TAG | cut -f1 -d":" | sed 's/.*\///')
+            cd $NAME_OF_DEPLOYMENT
+          fi
+
         # unrecognized tag
         else
           echo "ERROR: Unrecognized tag $TAG. Skipping"
