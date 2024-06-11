@@ -8,8 +8,8 @@ inputs:
   codecov_token:
     description: The token used to transmit codecov results
     required: true
-  docker_repo_without_org:
-    description: The repository where the docker image should be saved
+  repo:
+    description: The GitHub repository 
     required: true
   who_trigger:
     description: "Who trigger the pipeline"
@@ -43,7 +43,10 @@ runs:
     #Build Docker Test Image
     - name: Building Test Image
       shell: bash
-      run: docker build --file Dockerfile.test --build-arg GITHUB_SSH_KEY="${{ secrets.SSH_KEY_FLYBITS_BOT}}" --tag ${{ inputs.docker_repo_without_org }} .
+      run: |
+        
+        TEST_IMAGE="${{ inputs.repo }}-test"
+        docker build --file Dockerfile.test --build-arg GITHUB_SSH_KEY="${{ secrets.SSH_KEY_FLYBITS_BOT}}" --tag $TEST_IMAGE .
     
     #Run Tests
     - name: Run Tests
