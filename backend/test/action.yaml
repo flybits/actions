@@ -11,6 +11,9 @@ inputs:
   repo:
     description: The GitHub repository 
     required: true
+  ssh_git_key:
+    description: The private key certificate that allows for git commands to be executed across internal repositories
+    required: true
   who_trigger:
     description: "Who trigger the pipeline"
     required: true
@@ -44,9 +47,8 @@ runs:
     - name: Building Test Image
       shell: bash
       run: |
-        
         TEST_IMAGE="${{ inputs.repo }}-test"
-        docker build --file Dockerfile.test --build-arg GITHUB_SSH_KEY="${{ secrets.SSH_KEY_FLYBITS_BOT}}" --tag $TEST_IMAGE .
+        docker build --file Dockerfile.test --build-arg GITHUB_SSH_KEY="${{ inputs.ssh_git_key }}" --tag $TEST_IMAGE .
     
     #Run Tests
     - name: Run Tests
