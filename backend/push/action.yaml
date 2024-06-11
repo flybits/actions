@@ -64,15 +64,6 @@ runs:
         docker login --username ${{ inputs.docker_username }} --password ${{ inputs.docker_password }}
         docker push $TAG
 
-    #Setup Code Cov
-    - name: Setup CodeCov
-      uses: codecov/codecov-action@v4
-      with:
-        fail_ci_if_error: true # optional (default = false)
-        files: ./c.out # optional
-      env:
-        CODECOV_TOKEN: ${{ inputs.codecov_token }}
-
     #Push To GitOps
     - name: Push To GitOps
       shell: bash
