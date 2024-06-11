@@ -47,7 +47,7 @@ runs:
         SUFFIX="-$(git rev-parse --short HEAD)"
         SUFFIX+=".dev"
         VERSION=${VERSION/-0/$SUFFIX}
-        echo "TAG=${{ inputes.docker_repo }}:${VERSION}" >> $GITHUB_ENV
+        echo "TAG=${{ inputs.docker_repo }}:${VERSION}" >> $GITHUB_ENV
 
     #Log in to DockerHub
     - name: Login to Docker Hub
