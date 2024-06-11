@@ -32,6 +32,7 @@ runs:
 
     #Setup SSH Keys
     - name: Setup SSH Keys and known_hosts
+      shell: bash
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       run: |
