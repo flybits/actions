@@ -46,7 +46,7 @@ runs:
         SUFFIX="-$(git rev-parse --short HEAD)"
         SUFFIX+=".dev"
         VERSION=${VERSION/-0/$SUFFIX}
-        echo "TAG=${{ inputes.docker_repo }}:${VERSION}" >> $GITHUB_ENV
+        echo "TAG=${{ inputs.docker_repo }}:${VERSION}" >> $GITHUB_ENV
         echo "VERSION=${VERSION}" >> $GITHUB_ENV
 
     #The coorsponding action for storing this artifact can be found in backend/build/action.yaml under "Save Artifact for Push Docker Job"
