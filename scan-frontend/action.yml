@@ -41,7 +41,7 @@ runs:
       uses: flybits/frontend-github-actions/node-npm/install@main
       with:
         github-personal-access-token: ${{ inputs.github_token }}
-        slack-bot-token: ${{ slack-bot-token }}
+        slack-bot-token: ${{ inputs.slack-bot-token }}
 
     #Build using NX
     - if: ${{ inputs.build_runner == 'nx' }}
