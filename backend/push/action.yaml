@@ -48,7 +48,7 @@ runs:
     - name: Inputs validation
       shell: bash
       run: |
-        if [[ ${{ inputs.type }} == "production" || ${{ inputs.type }} == "staging"]]; then
+        if [[ ${{ inputs.type }} == "production" || ${{ inputs.type }} == "staging" ]]; then
           [[ "${{ inputs.branch }}" =~ ^(main)$ ]] || { echo "BRANCH ERROR: This pipeline it's only available for main branch!" ; exit 1; }
         fi
 
