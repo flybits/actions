@@ -45,7 +45,7 @@ runs:
         token: ${{ inputs.github_token }}
 
     #Validate Inputs
-     - name: Inputs validation
+    - name: Inputs validation
       shell: bash
       run: |
         if [[ ${{ inputs.type }} == "production" || ${{ inputs.type }} == "staging"]]; then
