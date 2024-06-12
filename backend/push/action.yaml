@@ -24,6 +24,9 @@ inputs:
     description: "Is this release for a specific deployment"
     required: false
     default: false
+  branch:
+    description: Which branch is running the job
+    required: true
   type:
     description: "Which server are we deploying to"
     required: true
@@ -41,6 +44,14 @@ runs:
         fetch-depth: 0
         token: ${{ inputs.github_token }}
 
+    #Validate Inputs
+     - name: Inputs validation
+      shell: bash
+      run: |
+        if [[ ${{ inputs.type }} == "production" || ${{ inputs.type }} == "staging"]]; then
+          [[ "${{ inputs.branch }}" =~ ^(main)$ ]] || { echo "BRANCH ERROR: This pipeline it's only available for main branch!" ; exit 1; }
+        fi
+
     #Setup SSH Keys
     - name: Setup SSH Keys and known_hosts
       shell: bash
@@ -55,9 +66,17 @@ runs:
       shell: bash
       run: |
         VERSION=$(cat VERSION)
-        SUFFIX="-$(git rev-parse --short HEAD)"
-        SUFFIX+=".dev"
-        VERSION=${VERSION/-0/$SUFFIX}
+        if [[ ${{ inputs.type }} == "dev" ]]; then
+          SUFFIX="-$(git rev-parse --short HEAD)"
+          SUFFIX+=".dev"
+          VERSION=${VERSION/-0/$SUFFIX}
+        elif [[ ${{ inputs.type }} == "staging" ]]; then
+          SUFFIX="-$(git rev-parse --short HEAD)"
+          VERSION=${VERSION/-0/$SUFFIX}
+        elif [[ ${{ inputs.type }} == "production" ]]; then
+          VERSION=${VERSION/-0/}
+        fi
+        
         echo "TAG=${{ inputs.docker_repo }}:${VERSION}" >> $GITHUB_ENV
         echo "VERSION=${VERSION}" >> $GITHUB_ENV
 
