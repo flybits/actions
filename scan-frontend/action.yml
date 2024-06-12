@@ -1,17 +1,35 @@
 name: ScanFrontend
 description: Vulnerability Scanning Service for All Production Frontend Repos
 inputs:
-    github_token:
-      description: A GitHub personal access token with repo scope to access private repositories.
-      required: true
-    environment:
-      description: 'The name of the environment to deploy to'
-      type: string
-      required: true
+  github_token:
+    description: A GitHub personal access token with repo scope to access private repositories.
+    required: true
+
+  environment:
+    description: 'The name of the environment to deploy to'
+    type: string
+    required: true
+
+  build_runner:
+    default: 'nx'
+    description: 'The name of the build runner to use'
+    required: false
+    type: string
+
+  slack-bot-token:
+    description: 'A bot token to publish a message on Slack'
+    required: true
 
 runs:
-  using: "composite"
+  using: 'composite'
   steps:
+    # Validate Inputs
+    - name: Validate Github Actions' inputs
+      shell: bash
+      run: |
+        [[ "${{ inputs.environment }}" ]] || { echo "environment input is empty"; exit 1; }
+        [[ "${{ inputs.github_token }}" ]] || { echo "github_token input is empty"; exit 1; }
+
     #Checkout
     - uses: actions/checkout@v4
       with:
@@ -23,11 +41,19 @@ runs:
       uses: flybits/frontend-github-actions/node-npm/install@main
       with:
         github-personal-access-token: ${{ inputs.github_token }}
+        slack-bot-token: ${{ slack-bot-token }}
 
-    #Build
-    - name: Run build
+    #Build using NX
+    - if: ${{ inputs.build_runner == 'nx' }}
+      name: Run build
       shell: bash
       run: npx nx build:${{ inputs.environment }}
+
+    #Build using NPM
+    - if: ${{ inputs.build_runner == 'npm' }}
+      name: Run build
+      shell: bash
+      run: npm build:${{ inputs.environment }}
 
     #Initializes the CodeQL tools for scanning.
     - name: Initialize CodeQL
