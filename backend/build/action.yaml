@@ -80,6 +80,7 @@ runs:
       with:
         name: docker-image
         path: ./docker.tar
+        retention-days: 5
 
     #Scan local Docker Image With Trivy
     - name: Trivy Scan Local Image
