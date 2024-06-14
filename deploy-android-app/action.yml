@@ -53,6 +53,9 @@ inputs:
   manifest_filepath:
     description: The path the desired AndroidManifest.xml file where the version_code and version_name should be updated
     required: true
+  release_directory:
+    description: The directory where the release file should be signed from
+    required: true
 
 runs:
   using: "composite"
@@ -150,13 +153,13 @@ runs:
     - name: Build with Gradle
       shell: bash
       id: build
-      run: ./gradlew ${{ inputs.build_cmd }}
+      run: ./gradlew build
 
     #BUILD RELEASE GRADLE
     - name: Build Release
       shell: bash
       id: buildRelease
-      run: ./gradlew bundleRelease
+      run: ./gradlew ${{ inputs.build_cmd }}
 
     #Set up Android Build Tools
     - name: Setup build tool version variable
@@ -171,7 +174,7 @@ runs:
       id: sign_app
       uses: r0adkll/sign-android-release@v1
       with:
-        releaseDirectory: app/build/outputs/bundle/release
+        releaseDirectory: ${{ inputs.release_directory }}
         signingKeyBase64: ${{ inputs.keystore_file }}
         alias: ${{ inputs.alias }}
         keyStorePassword: ${{ inputs.keystore_password }}
