@@ -20,6 +20,13 @@ inputs:
   who_trigger:
     description: "Who trigger the pipeline"
     required: true
+  type:
+    description: "Which server are we deploying to"
+    required: true
+    options:
+      - dev
+      - staging
+      - production
 
 runs:
   using: "composite"
@@ -44,9 +51,16 @@ runs:
       shell: bash
       run: |
         VERSION=$(cat VERSION)
-        SUFFIX="-$(git rev-parse --short HEAD)"
-        SUFFIX+=".dev"
-        VERSION=${VERSION/-0/$SUFFIX}
+        if [[ ${{ inputs.type }} == "dev" ]]; then
+          SUFFIX="-$(git rev-parse --short HEAD)"
+          SUFFIX+=".dev"
+          VERSION=${VERSION/-0/$SUFFIX}
+        elif [[ ${{ inputs.type }} == "staging" ]]; then
+          SUFFIX="-$(git rev-parse --short HEAD)"
+          VERSION=${VERSION/-0/$SUFFIX}
+        elif [[ ${{ inputs.type }} == "production" ]]; then
+          VERSION=${VERSION/-0/}
+        fi
         echo "TAG=${{ inputs.docker_repo }}:${VERSION}" >> $GITHUB_ENV
 
     #Log in to DockerHub
