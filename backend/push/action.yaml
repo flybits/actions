@@ -1,0 +1,176 @@
+name: Run Unit Tests
+author: Petar Kramaric
+description: GitHub action for building backend docker images
+inputs:
+  github_token:
+    description: A GitHub personal access token with repo scope to access private repositories.
+    required: true
+  docker_username:
+    description: A username of the docker registry
+    required: true
+  docker_password:
+    description: The password associated to the docker registry user
+    required: true
+  docker_repo:
+    description: The repository where the docker image should be saved. Format is {organization}/{repository}
+    required: true
+  ssh_git_key:
+    description: The private key certificate that allows for git commands to be executed across internal repositories
+    required: true
+  who_trigger:
+    description: "Who trigger the pipeline"
+    required: true
+  specific_deployment:
+    description: "Is this release for a specific deployment"
+    required: false
+    default: false
+  branch:
+    description: Which branch is running the job
+    required: true
+  type:
+    description: "Which server are we deploying to"
+    required: true
+    options:
+      - dev
+      - staging
+      - production
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{ github.ref }}
+        fetch-depth: 0
+        token: ${{ inputs.github_token }}
+
+    #Validate Inputs
+    - name: Inputs validation
+      shell: bash
+      run: |
+        if [[ ${{ inputs.type }} == "production" || ${{ inputs.type }} == "staging" ]]; then
+          [[ "${{ inputs.branch }}" =~ ^(main)$ ]] || { echo "BRANCH ERROR: This pipeline it's only available for main branch!" ; exit 1; }
+        fi
+
+    #Setup SSH Keys
+    - name: Setup SSH Keys and known_hosts
+      shell: bash
+      env:
+        SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+      run: |
+        ssh-agent -a $SSH_AUTH_SOCK > /dev/null
+        ssh-add - <<< "${{ inputs.ssh_git_key }}"
+    
+    #Get New Version
+    - name: Update Version of Docker Image
+      shell: bash
+      run: |
+        VERSION=$(cat VERSION)
+        if [[ ${{ inputs.type }} == "dev" ]]; then
+          SUFFIX="-$(git rev-parse --short HEAD)"
+          SUFFIX+=".dev"
+          VERSION=${VERSION/-0/$SUFFIX}
+        elif [[ ${{ inputs.type }} == "staging" ]]; then
+          SUFFIX="-$(git rev-parse --short HEAD)"
+          VERSION=${VERSION/-0/$SUFFIX}
+        elif [[ ${{ inputs.type }} == "production" ]]; then
+          VERSION=${VERSION/-0/}
+        fi
+        
+        echo "TAG=${{ inputs.docker_repo }}:${VERSION}" >> $GITHUB_ENV
+        echo "VERSION=${VERSION}" >> $GITHUB_ENV
+
+    #The coorsponding action for storing this artifact can be found in backend/build/action.yaml under "Save Artifact for Push Docker Job"
+    - uses: actions/download-artifact@v4
+      with:
+        name: docker-image
+        path: /tmp
+    
+    #Push Docker Image
+    - name: Push Docker Image
+      shell: bash
+      run: |
+        docker image load --input /tmp/docker.tar
+        docker login --username ${{ inputs.docker_username }} --password ${{ inputs.docker_password }}
+        docker push $TAG
+
+    #Push To GitOps
+    - name: Push To GitOps
+      shell: bash
+      env:
+        SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+      run: |
+        echo "VERSION: $VERSION"
+        echo "IMAGE: $TAG"
+        
+        git config --global user.name "flybitsbot"
+        git config --global user.email "dev@flybits.com"
+        
+        mkdir git
+        cd git
+        git clone git@github.com:flybits/gitops.git .
+        
+        update_image_and_push () {
+          kustomize edit set image $TAG
+
+          try_commit_push () {
+            UPSTREAM=${1:-'@{u}'}
+            DIFFCOMM=$(git fetch origin --quiet; git rev-list HEAD..."$UPSTREAM" --count)
+            if [ "$DIFFCOMM" -gt 0 ]; then
+              echo "Pulling $UPSTREAM";
+              git stash;
+              git pull --no-edit;
+              git stash pop;
+            fi
+
+            git commit -am"Auto-release $TAG"
+            git push origin $BRANCH || try_commit_push
+          }
+
+          # Check empty commit
+          if [ -n "$(git status --porcelain)" ]; then
+            try_commit_push
+          else
+            echo "nothing to deploy"
+          fi
+        }
+        
+        BRANCH=main
+
+        # development release
+        if [[ ${{ inputs.type }} == "dev" ]]; then
+          echo "Development release..."
+          BRANCH=develop
+          git checkout $BRANCH
+          cd env/development
+        
+        # staging release
+        elif [[ ${{ inputs.type }} == "staging" ]]; then
+          echo "Development release..."
+          BRANCH=develop
+          git checkout $BRANCH
+          cd env/development
+          update_image_and_push
+          cd ../../  # return to root directory
+
+          echo "Staging release..."
+          BRANCH=main
+          git checkout $BRANCH
+          cd env/staging
+
+        elif [[ ${{ inputs.type }} == "production" ]]; then
+          echo "Production release..."
+          cd base
+          kustomize edit set image $TAG
+          if [ "${{ inputs.specific_deployment }}" == "true" ]; then
+            NAME_OF_DEPLOYMENT=$(echo $TAG | cut -f1 -d":" | sed 's/.*\///')
+            cd $NAME_OF_DEPLOYMENT
+          fi
+
+        # unrecognized tag
+        else
+          echo "ERROR: Unrecognized tag $TAG. Skipping"
+          exit 0
+        fi
+
+        update_image_and_push
