@@ -40,6 +40,19 @@ inputs:
   package_name:
     description: The package name of the Android application being uploaded to the Play Store
     required: true
+  version_code_filepath:
+    description: The path of the version code file that should be read and updated
+    required: true
+  version_name_filepath:
+    description: The path of the version name file that should be read and updated
+    required: true
+  build_cmd:
+    description: The command needed to build the specific variant of the release
+    required: false
+    default: bundleRelease
+  manifest_filepath:
+    description: The path the desired AndroidManifest.xml file where the version_code and version_name should be updated
+    required: true
 
 runs:
   using: "composite"
@@ -81,7 +94,7 @@ runs:
       if: inputs.version != 'patch'
       with:
         version-source: file
-        version-file: VERSION
+        version-file: ${{ inputs.version_name_filepath }}
         release-version-cut-prerelease: true
         next-version-increment-patch: true
         next-version-increment-minor: ${{ contains(inputs.version, 'minor') }}
@@ -92,14 +105,14 @@ runs:
       shell: bash
       if: inputs.version != 'patch'
       run: |
-        echo "${{ env.NEXT_VERSION }}" > VERSION
+        echo "${{ env.NEXT_VERSION }}" > ${{ inputs.version_name_filepath }}
 
     #Increase Version Name PATCH
     - name: Generate versions
       uses: HardNorth/github-version-generate@v1.4.0
       with:
         version-source: file
-        version-file: VERSION
+        version-file: ${{ inputs.version_name_filepath }}
         release-version-cut-prerelease: true
         next-version-increment-patch: true
         next-version-increment-minor: false
@@ -109,16 +122,16 @@ runs:
     - name: Increase version code and change version name
       shell: bash
       run: |
-        echo "${{ env.RELEASE_VERSION }}" > VERSION
-        current_version_code=$(cat VERSION_CODE)
+        echo "${{ env.RELEASE_VERSION }}" > ${{ inputs.version_name_filepath }}
+        current_version_code=$(cat ${{ inputs.version_code_filepath }})
         echo Version Code: $current_version_code
         echo Version Name: ${{ env.RELEASE_VERSION }}
 
-        sed -i "s/versionCode [0-9]*/versionCode $current_version_code/g" app/build.gradle
-        sed -i "s/versionName \"[^\"]*\"/versionName \"${{ env.RELEASE_VERSION }}\"/g" app/build.gradle
+        sed -i "s/android:versionCode=\"[0-9]*\"/android:versionCode=\"$current_version_code\"/g" ${{ inputs.manifest_filepath }}
+        sed -i "s/android:versionName=\"[^\"]*\"/android:versionName=\"${{ env.RELEASE_VERSION }}\"/g" ${{ inputs.manifest_filepath }}
         current_version_code=$((current_version_code+1))
-        echo "$current_version_code" > VERSION_CODE
-        echo "${{ env.NEXT_VERSION }}" > VERSION
+        echo "$current_version_code" > ${{ inputs.version_code_filepath }}
+        echo "${{ env.NEXT_VERSION }}" > ${{ inputs.version_name_filepath }}
 
     #JDK 18
     - name: Set up JDK 18
@@ -137,7 +150,7 @@ runs:
     - name: Build with Gradle
       shell: bash
       id: build
-      run: ./gradlew build
+      run: ./gradlew ${{ inputs.build_cmd }}
 
     #BUILD RELEASE GRADLE
     - name: Build Release
