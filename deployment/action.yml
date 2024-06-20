@@ -75,7 +75,7 @@ runs:
       run: |
         echo "${{ env.RELEASE_VERSION }}" > VERSION
         if [ -n "$(git status --porcelain)" ]; then
-          git commit -am "Releasing ${{env.RELEASE_VERSION}} [skip ci]"
+          git commit -am "Releasing ${{env.RELEASE_VERSION}}"
           git push --force
         fi
       env:
