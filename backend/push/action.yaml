@@ -60,30 +60,17 @@ runs:
       run: |
         ssh-agent -a $SSH_AUTH_SOCK > /dev/null
         ssh-add - <<< "${{ inputs.ssh_git_key }}"
-    
-    #Get New Version
-    - name: Update Version of Docker Image
-      shell: bash
-      run: |
-        VERSION=$(cat VERSION)
-        if [[ ${{ inputs.type }} == "dev" ]]; then
-          SUFFIX="-$(git rev-parse --short HEAD)"
-          SUFFIX+=".dev"
-          VERSION=${VERSION/-0/$SUFFIX}
-        elif [[ ${{ inputs.type }} == "staging" ]]; then
-          SUFFIX="-$(git rev-parse --short HEAD)"
-          VERSION=${VERSION/-0/$SUFFIX}
-        elif [[ ${{ inputs.type }} == "production" ]]; then
-          VERSION=${VERSION/-0/}
-        fi
-        
-        echo "TAG=${{ inputs.docker_repo }}:${VERSION}" >> $GITHUB_ENV
-        echo "VERSION=${VERSION}" >> $GITHUB_ENV
 
     #The coorsponding action for storing this artifact can be found in backend/build/action.yaml under "Save Artifact for Push Docker Job"
     - uses: actions/download-artifact@v4
       with:
         name: docker-image
+        path: /tmp
+
+    #The coorsponding action for storing this artifact can be found in backend/build/action.yaml under "Save Artifact for Push Docker Job"
+    - uses: actions/download-artifact@v4
+      with:
+        name: version-from-build
         path: /tmp
     
     #Push Docker Image
@@ -100,7 +87,8 @@ runs:
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       run: |
-        echo "VERSION: $VERSION"
+        VERSION=$(cat /tmp/version-from-build)
+        echo "TAG=${{ inputs.docker_repo }}:${VERSION}"
         echo "IMAGE: $TAG"
         
         git config --global user.name "flybitsbot"
