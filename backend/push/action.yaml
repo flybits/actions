@@ -72,6 +72,14 @@ runs:
       with:
         name: version-from-build
         path: /tmp
+
+    #Expose Version of Image
+    - name: Expose Version As Environment Variable
+      shell: bash
+      run: |
+        VERSION=$(cat /tmp/version-from-build)
+        echo "VERSION: $VERSION"
+        echo "TAG=${{ inputs.docker_repo }}:${VERSION}" >> $GITHUB_ENV
     
     #Push Docker Image
     - name: Push Docker Image
@@ -87,8 +95,6 @@ runs:
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       run: |
-        VERSION=$(cat /tmp/version-from-build)
-        echo "TAG=${{ inputs.docker_repo }}:${VERSION}"
         echo "IMAGE: $TAG"
         
         git config --global user.name "flybitsbot"
