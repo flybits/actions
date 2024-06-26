@@ -17,6 +17,10 @@ inputs:
   docker_repo:
     description: The repository where the docker image should be saved. Format is {organization}/{repository}
     required: true
+  docker_file:
+    description: The dockerfile to process.
+    required: false
+    default: Dockerfile
   who_trigger:
     description: "Who trigger the pipeline"
     required: true
@@ -81,13 +85,13 @@ runs:
       shell: bash
       run: |
         trivy fs --exit-code 1 --severity HIGH,CRITICAL --no-progress .
-        trivy config --exit-code 1 --severity HIGH,CRITICAL Dockerfile
+        trivy config --exit-code 1 --severity HIGH,CRITICAL ${{ inputs.docker_file }}
 
     #Build Docker Image
     - name: Build Docker Image
       shell: bash
       run: |
-        docker image build --file Dockerfile --build-arg GITHUB_SSH_KEY="${{ inputs.ssh_git_key}}" --tag $TAG .
+        docker image build --file ${{ inputs.docker_file }} --build-arg GITHUB_SSH_KEY="${{ inputs.ssh_git_key}}" --tag $TAG .
         docker image save --output ./docker.tar $TAG
 
     #Save Artifact for Push Docker Job
