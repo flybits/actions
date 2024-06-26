@@ -217,7 +217,7 @@ runs:
     - name: Create Release
       shell: bash
       run: |
-        if [ -z "${VAR}" ]; then
+        if [ -z "${{ inputs.tag_suffix}}" ]; then
           gh release create "v${{ env.RELEASE_VERSION }}" --generate-notes
         else
           gh release create "v${{ env.RELEASE_VERSION }}-${{ inputs.tag_suffix}}" --generate-notes 
