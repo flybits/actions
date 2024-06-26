@@ -93,8 +93,8 @@ runs:
       shell: bash
       run: |
         echo "IMAGEBASE64=$(echo -n ${{ inputs.docker_repo }} | base64)"
-        DOCKERPATH = "./docker-${{ env.DOCKERPATH }}.tar" >> $GITHUB_ENV
-        VERSIONPATH = "VERSION-${{ env.DOCKERPATH }}" >> $GITHUB_ENV
+        DOCKERPATH = "./docker-${{ env.IMAGEBASE64 }}.tar" >> $GITHUB_ENV
+        VERSIONPATH = "VERSION-${{ env.IMAGEBASE64 }}" >> $GITHUB_ENV
         DOCKERVARNAME = "docker-image-$IMAGEBASE64" >> $GITHUB_ENV
         VERSIONVARNAME = "version-from-build-$IMAGEBASE64" >> $GITHUB_ENV
 
