@@ -56,6 +56,9 @@ inputs:
   release_directory:
     description: The directory where the release file should be signed from
     required: true
+  tag_suffix:
+    description: The tag suffix that should be used 
+    required: optional
 
 runs:
   using: "composite"
@@ -213,6 +216,11 @@ runs:
     #Create Release Tag
     - name: Create Release
       shell: bash
-      run: gh release create "v${{ env.RELEASE_VERSION }}" --generate-notes
+      run: |
+        if [ -z "${VAR}" ]; then
+          gh release create "v${{ env.RELEASE_VERSION }}" --generate-notes
+        else
+          gh release create "v${{ env.RELEASE_VERSION }}-${{ inputs.tag_suffix}}" --generate-notes 
+        fi
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
