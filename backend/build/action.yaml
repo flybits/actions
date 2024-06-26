@@ -65,6 +65,7 @@ runs:
         elif [[ ${{ inputs.type }} == "production" ]]; then
           VERSION=${VERSION/-0/}
         fi
+
         echo "TAG=${{ inputs.docker_repo }}:${VERSION}" >> $GITHUB_ENV
         echo "$VERSION" > VERSION
 
@@ -91,21 +92,24 @@ runs:
     - name: Build Docker Image
       shell: bash
       run: |
+        echo "IMAGEBASE64=$(echo -n ${{ inputs.docker_repo }} | base64)"
+        DOCKERPATH = "./docker-${{ env.DOCKERPATH }}.tar" >> $GITHUB_ENV
+        VERSIONPATH = "VERSION-${{ env.DOCKERPATH }}" >> $GITHUB_ENV
         docker image build --file ${{ inputs.docker_file }} --build-arg GITHUB_SSH_KEY="${{ inputs.ssh_git_key}}" --tag $TAG .
-        docker image save --output ./docker.tar $TAG
+        docker image save --output $DOCKERPATH $TAG
 
     #Save Artifact for Push Docker Job
     - uses: actions/upload-artifact@v4
       with:
         name: docker-image
-        path: ./docker.tar
+        path: ${{ env.DOCKERPATH }}
         retention-days: 5
     
     #Save Artifact for Push Docker Job
     - uses: actions/upload-artifact@v4
       with:
         name: version-from-build
-        path: VERSION
+        path: $VERSIONPATH
         retention-days: 5
 
     #Scan local Docker Image With Trivy
