@@ -61,23 +61,33 @@ runs:
         ssh-agent -a $SSH_AUTH_SOCK > /dev/null
         ssh-add - <<< "${{ inputs.ssh_git_key }}"
 
+    #Setup Paths
+    - name: Setup Paths
+      shell: bash
+      run: |
+        echo "IMAGEBASE64=$(echo -n ${{ inputs.docker_repo }} | base64)"
+        DOCKERPATH=$(echo "./docker-${{ env.IMAGEBASE64 }}.tar") >> $GITHUB_ENV
+        VERSIONPATH =$(echo "VERSION-${{ env.IMAGEBASE64 }}") >> $GITHUB_ENV
+        DOCKERVARNAME =$(echo "docker-image-$IMAGEBASE64") >> $GITHUB_ENV
+        VERSIONVARNAME =$(echo "version-from-build-$IMAGEBASE64") >> $GITHUB_ENV
+
     #The coorsponding action for storing this artifact can be found in backend/build/action.yaml under "Save Artifact for Push Docker Job"
     - uses: actions/download-artifact@v4
       with:
-        name: docker-image
+        name: ${{ env.DOCKERVARNAME }}
         path: /tmp
 
     #The coorsponding action for storing this artifact can be found in backend/build/action.yaml under "Save Artifact for Push Docker Job"
     - uses: actions/download-artifact@v4
       with:
-        name: version-from-build
+        name: ${{ env.VERSIONVARNAME }}
         path: /tmp
 
     #Expose Version of Image
     - name: Expose Version As Environment Variable
       shell: bash
       run: |
-        VERSION=$(cat /tmp/VERSION)
+        VERSION=$(cat /tmp/$VERSIONPATH)
         echo "VERSION: $VERSION"
         echo "TAG=${{ inputs.docker_repo }}:${VERSION}" >> $GITHUB_ENV
     
@@ -85,7 +95,7 @@ runs:
     - name: Push Docker Image
       shell: bash
       run: |
-        docker image load --input /tmp/docker.tar
+        docker image load --input /tmp/${{ env.DOCKERPATH }}
         docker login --username ${{ inputs.docker_username }} --password ${{ inputs.docker_password }}
         docker push $TAG
 
