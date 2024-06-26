@@ -94,9 +94,9 @@ runs:
       run: |
         echo "IMAGEBASE64=$(echo -n ${{ inputs.docker_repo }} | base64)"
         DOCKERPATH=$(echo "./docker-${{ env.IMAGEBASE64 }}.tar") >> $GITHUB_ENV
-        VERSIONPATH =$(echo "VERSION-${{ env.IMAGEBASE64 }}") >> $GITHUB_ENV
-        DOCKERVARNAME =$(echo "docker-image-$IMAGEBASE64") >> $GITHUB_ENV
-        VERSIONVARNAME =$(echo "version-from-build-$IMAGEBASE64") >> $GITHUB_ENV
+        VERSIONPATH=$(echo "VERSION-${{ env.IMAGEBASE64 }}") >> $GITHUB_ENV
+        DOCKERVARNAME=$(echo "docker-image-$IMAGEBASE64") >> $GITHUB_ENV
+        VERSIONVARNAME=$(echo "version-from-build-$IMAGEBASE64") >> $GITHUB_ENV
 
     #Build Docker Image
     - name: Build Docker Image
