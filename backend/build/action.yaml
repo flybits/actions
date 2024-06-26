@@ -88,27 +88,34 @@ runs:
         trivy fs --exit-code 1 --severity HIGH,CRITICAL --no-progress .
         trivy config --exit-code 1 --severity HIGH,CRITICAL ${{ inputs.docker_file }}
 
-    #Build Docker Image
-    - name: Build Docker Image
+    #Setup Paths
+    - name: Setup Paths
       shell: bash
       run: |
         echo "IMAGEBASE64=$(echo -n ${{ inputs.docker_repo }} | base64)"
         DOCKERPATH = "./docker-${{ env.DOCKERPATH }}.tar" >> $GITHUB_ENV
         VERSIONPATH = "VERSION-${{ env.DOCKERPATH }}" >> $GITHUB_ENV
+        DOCKERVARNAME = "docker-image-$IMAGEBASE64" >> $GITHUB_ENV
+        VERSIONVARNAME = "version-from-build-$IMAGEBASE64" >> $GITHUB_ENV
+
+    #Build Docker Image
+    - name: Build Docker Image
+      shell: bash
+      run: |
         docker image build --file ${{ inputs.docker_file }} --build-arg GITHUB_SSH_KEY="${{ inputs.ssh_git_key}}" --tag $TAG .
         docker image save --output $DOCKERPATH $TAG
 
     #Save Artifact for Push Docker Job
     - uses: actions/upload-artifact@v4
       with:
-        name: docker-image
+        name: ${{ env.DOCKERVARNAME }}
         path: ${{ env.DOCKERPATH }}
         retention-days: 5
     
     #Save Artifact for Push Docker Job
     - uses: actions/upload-artifact@v4
       with:
-        name: version-from-build
+        name: ${{ env.VERSIONVARNAME }}
         path: $VERSIONPATH
         retention-days: 5
 
