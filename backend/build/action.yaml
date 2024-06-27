@@ -94,16 +94,16 @@ runs:
       run: |
         echo "base64OfImage=$(echo -n ${{ inputs.docker_repo }} | base64)"
         
-        echo "DOCKERIMAGEFILE=$(echo -n ./docker-$base64OfImage.tar)" >> $GITHUB_ENV
+        echo "DOCKERIMAGEFILE=`echo -n ./docker-$base64OfImage.tar`" >> $GITHUB_ENV
         echo $DOCKERIMAGEFILE
 
-        echo "VERSIONFILE=$(echo -n VERSION-$base64OfImage)" >> $GITHUB_ENV
+        echo "VERSIONFILE=`echo -n VERSION-$base64OfImage`" >> $GITHUB_ENV
         echo $VERSIONFILE
 
-        echo "DOCKERVARNAME=$(echo -n docker-image-$base64OfImage)" >> $GITHUB_ENV
+        echo "DOCKERVARNAME=`echo -n docker-image-$base64OfImage`" >> $GITHUB_ENV
         echo $DOCKERVARNAME
 
-        echo "VERSIONFILENAME=$(echo -n version-from-build-$base64OfImage)" >> $GITHUB_ENV
+        echo "VERSIONFILENAME=`echo -n version-from-build-$base64OfImage`" >> $GITHUB_ENV
         echo $VERSIONFILENAME
 
     #Build Docker Image
