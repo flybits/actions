@@ -106,7 +106,7 @@ runs:
       shell: bash
       run: |
         docker image build --file ${{ inputs.docker_file }} --build-arg GITHUB_SSH_KEY="${{ inputs.ssh_git_key}}" --tag $TAG .
-        docker image save --output ./docker.tar $TAG
+        docker image save --output ${{ env.DOCKERIMAGEFILE }} $TAG
 
     #Save Artifact for Push Docker Job
     - uses: actions/upload-artifact@v4
