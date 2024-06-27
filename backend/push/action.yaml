@@ -62,6 +62,10 @@ runs:
         ssh-add - <<< "${{ inputs.ssh_git_key }}"
 
     #Setup Paths
+    #This is needed because its possible there are cases where multiple actions need to be run such as auth;
+    #Auth has two images that get deployed one for the Auth service and one for the Auth User Deletion cronjob
+    #In order to avoid collisions between the two jobs we need to have different names for the files that get 
+    #uploaded.
     - name: Setup Paths
       shell: bash
       run: |
