@@ -99,7 +99,7 @@ runs:
         echo "DOCKERVARNAME=`echo -n docker-image-$base64OfImage`" >> $GITHUB_ENV
         echo "VERSIONFILENAME=`echo -n version-from-build-$base64OfImage`" >> $GITHUB_ENV
 
-        cp VERSION $VERSIONFILE
+        cp VERSION "$VERSIONFILE"
 
     #Build Docker Image
     - name: Build Docker Image
