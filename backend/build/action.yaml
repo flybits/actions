@@ -93,10 +93,19 @@ runs:
       shell: bash
       run: |
         echo "IMAGEBASE64=$(echo -n ${{ inputs.docker_repo }} | base64)"
-        echo "DockerImageFile=./docker-${{ env.IMAGEBASE64 }}.tar" >> $GITHUB_ENV
-        echo "VersionFile=VERSION-${{ env.IMAGEBASE64 }}" >> $GITHUB_ENV
-        echo "DockerVarName=docker-image-$IMAGEBASE64" >> $GITHUB_ENV
-        echo "VersionVarName=version-from-build-$IMAGEBASE64" >> $GITHUB_ENV
+        
+        echo "DockerImageFile=$(echo -n ./docker-$IMAGEBASE64.tar)" >> $GITHUB_ENV
+        echo $DockerImageFile
+
+        echo "VersionFile=$(echo -n VERSION-$IMAGEBASE64)" >> $GITHUB_ENV
+        cp VERSION $VersionFile
+        echo $VersionFile
+
+        echo "DockerVarName=$(echo -n docker-image-$IMAGEBASE64)" >> $GITHUB_ENV
+        echo $DockerVarName
+
+        echo "VersionVarName=$(echo -n version-from-build-$IMAGEBASE64)" >> $GITHUB_ENV
+        echo $VersionVarName
 
     #Build Docker Image
     - name: Build Docker Image
