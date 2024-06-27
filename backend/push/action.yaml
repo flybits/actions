@@ -65,11 +65,12 @@ runs:
     - name: Setup Paths
       shell: bash
       run: |
-        echo "IMAGEBASE64=$(echo -n ${{ inputs.docker_repo }} | base64)"
-        DOCKERPATH=$(echo "./docker-${{ env.IMAGEBASE64 }}.tar") >> $GITHUB_ENV
-        VERSIONPATH =$(echo "VERSION-${{ env.IMAGEBASE64 }}") >> $GITHUB_ENV
-        DOCKERVARNAME =$(echo "docker-image-$IMAGEBASE64") >> $GITHUB_ENV
-        VERSIONVARNAME =$(echo "version-from-build-$IMAGEBASE64") >> $GITHUB_ENV
+        base64OfImage=`echo -n ${{ inputs.docker_repo }} | base64`
+        
+        echo "DOCKERIMAGEFILE=`echo -n docker-$base64OfImage.tar`" >> $GITHUB_ENV
+        echo "VERSIONFILE=`echo -n VERSION-$base64OfImage`" >> $GITHUB_ENV
+        echo "DOCKERVARNAME=`echo -n docker-image-$base64OfImage`" >> $GITHUB_ENV
+        echo "VERSIONFILENAME=`echo -n version-from-build-$base64OfImage`" >> $GITHUB_ENV
 
     #The coorsponding action for storing this artifact can be found in backend/build/action.yaml under "Save Artifact for Push Docker Job"
     - uses: actions/download-artifact@v4
@@ -80,14 +81,14 @@ runs:
     #The coorsponding action for storing this artifact can be found in backend/build/action.yaml under "Save Artifact for Push Docker Job"
     - uses: actions/download-artifact@v4
       with:
-        name: ${{ env.VERSIONVARNAME }}
+        name: ${{ env.VERSIONFILENAME }}
         path: /tmp
 
     #Expose Version of Image
     - name: Expose Version As Environment Variable
       shell: bash
       run: |
-        VERSION=$(cat /tmp/$VERSIONPATH)
+        VERSION=$(cat /tmp/$VERSIONFILE)
         echo "VERSION: $VERSION"
         echo "TAG=${{ inputs.docker_repo }}:${VERSION}" >> $GITHUB_ENV
     
@@ -95,7 +96,7 @@ runs:
     - name: Push Docker Image
       shell: bash
       run: |
-        docker image load --input /tmp/${{ env.DOCKERPATH }}
+        docker image load --input /tmp/${{ env.DOCKERIMAGEFILE }}
         docker login --username ${{ inputs.docker_username }} --password ${{ inputs.docker_password }}
         docker push $TAG
 
