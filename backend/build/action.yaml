@@ -95,16 +95,18 @@ runs:
         echo "base64OfImage=$(echo -n ${{ inputs.docker_repo }} | base64)"
         
         echo "DOCKERIMAGEFILE=`echo -n ./docker-$base64OfImage.tar`" >> $GITHUB_ENV
-        echo $DOCKERIMAGEFILE
+        echo "${{ env.DOCKERIMAGEFILE }}"
 
         echo "VERSIONFILE=`echo -n VERSION-$base64OfImage`" >> $GITHUB_ENV
+        echo "${{ env.VERSIONFILE }}"
         echo $VERSIONFILE
 
         echo "DOCKERVARNAME=`echo -n docker-image-$base64OfImage`" >> $GITHUB_ENV
-        echo $DOCKERVARNAME
+        echo "${{ env.DOCKERVARNAME }}"
+        echo "$DOCKERVARNAME"
 
         echo "VERSIONFILENAME=`echo -n version-from-build-$base64OfImage`" >> $GITHUB_ENV
-        echo $VERSIONFILENAME
+        echo "${{ env.VERSIONFILENAME }}"
 
     #Build Docker Image
     - name: Build Docker Image
@@ -125,7 +127,7 @@ runs:
     - uses: actions/upload-artifact@v4
       with:
         name: ${{ env.VERSIONFILENAME }}
-        path: $VERSIONFILE
+        path: ${{ env.VERSIONFILE }}
         retention-days: 5
 
     #Scan local Docker Image With Trivy
