@@ -61,23 +61,38 @@ runs:
         ssh-agent -a $SSH_AUTH_SOCK > /dev/null
         ssh-add - <<< "${{ inputs.ssh_git_key }}"
 
+    #Setup Paths
+    #This is needed because its possible there are cases where multiple actions need to be run such as auth;
+    #Auth has two images that get deployed one for the Auth service and one for the Auth User Deletion cronjob
+    #In order to avoid collisions between the two jobs we need to have different names for the files that get 
+    #uploaded.
+    - name: Setup Paths
+      shell: bash
+      run: |
+        base64OfImage=`echo -n ${{ inputs.docker_repo }} | base64`
+        
+        echo "DOCKERIMAGEFILE=`echo -n docker-$base64OfImage.tar`" >> $GITHUB_ENV
+        echo "VERSIONFILE=`echo -n VERSION-$base64OfImage`" >> $GITHUB_ENV
+        echo "DOCKERVARNAME=`echo -n docker-image-$base64OfImage`" >> $GITHUB_ENV
+        echo "VERSIONFILENAME=`echo -n version-from-build-$base64OfImage`" >> $GITHUB_ENV
+
     #The coorsponding action for storing this artifact can be found in backend/build/action.yaml under "Save Artifact for Push Docker Job"
     - uses: actions/download-artifact@v4
       with:
-        name: docker-image
+        name: ${{ env.DOCKERVARNAME }}
         path: /tmp
 
     #The coorsponding action for storing this artifact can be found in backend/build/action.yaml under "Save Artifact for Push Docker Job"
     - uses: actions/download-artifact@v4
       with:
-        name: version-from-build
+        name: ${{ env.VERSIONFILENAME }}
         path: /tmp
 
     #Expose Version of Image
     - name: Expose Version As Environment Variable
       shell: bash
       run: |
-        VERSION=$(cat /tmp/VERSION)
+        VERSION=$(cat /tmp/$VERSIONFILE)
         echo "VERSION: $VERSION"
         echo "TAG=${{ inputs.docker_repo }}:${VERSION}" >> $GITHUB_ENV
     
@@ -85,7 +100,7 @@ runs:
     - name: Push Docker Image
       shell: bash
       run: |
-        docker image load --input /tmp/docker.tar
+        docker image load --input /tmp/${{ env.DOCKERIMAGEFILE }}
         docker login --username ${{ inputs.docker_username }} --password ${{ inputs.docker_password }}
         docker push $TAG
 

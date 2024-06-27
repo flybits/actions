@@ -65,6 +65,7 @@ runs:
         elif [[ ${{ inputs.type }} == "production" ]]; then
           VERSION=${VERSION/-0/}
         fi
+
         echo "TAG=${{ inputs.docker_repo }}:${VERSION}" >> $GITHUB_ENV
         echo "$VERSION" > VERSION
 
@@ -87,25 +88,43 @@ runs:
         trivy fs --exit-code 1 --severity HIGH,CRITICAL --no-progress .
         trivy config --exit-code 1 --severity HIGH,CRITICAL ${{ inputs.docker_file }}
 
+    #Setup Paths
+    #This is needed because its possible there are cases where multiple actions need to be run such as auth;
+    #Auth has two images that get deployed one for the Auth service and one for the Auth User Deletion cronjob
+    #In order to avoid collisions between the two jobs we need to have different names for the files that get 
+    #uploaded.
+    - name: Setup Paths
+      shell: bash
+      run: |
+        base64OfImage=`echo -n ${{ inputs.docker_repo }} | base64`
+        versionFile=`echo -n VERSION-$base64OfImage`
+        
+        echo "DOCKERIMAGEFILE=`echo -n ./docker-$base64OfImage.tar`" >> $GITHUB_ENV
+        echo "VERSIONFILE=`echo -n $versionFile`" >> $GITHUB_ENV
+        echo "DOCKERVARNAME=`echo -n docker-image-$base64OfImage`" >> $GITHUB_ENV
+        echo "VERSIONFILENAME=`echo -n version-from-build-$base64OfImage`" >> $GITHUB_ENV
+
+        cp VERSION $versionFile
+
     #Build Docker Image
     - name: Build Docker Image
       shell: bash
       run: |
         docker image build --file ${{ inputs.docker_file }} --build-arg GITHUB_SSH_KEY="${{ inputs.ssh_git_key}}" --tag $TAG .
-        docker image save --output ./docker.tar $TAG
+        docker image save --output ${{ env.DOCKERIMAGEFILE }} $TAG
 
     #Save Artifact for Push Docker Job
     - uses: actions/upload-artifact@v4
       with:
-        name: docker-image
-        path: ./docker.tar
+        name: ${{ env.DOCKERVARNAME }}
+        path: ${{ env.DOCKERIMAGEFILE }}
         retention-days: 5
     
     #Save Artifact for Push Docker Job
     - uses: actions/upload-artifact@v4
       with:
-        name: version-from-build
-        path: VERSION
+        name: ${{ env.VERSIONFILENAME }}
+        path: ${{ env.VERSIONFILE }}
         retention-days: 5
 
     #Scan local Docker Image With Trivy
