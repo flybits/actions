@@ -101,6 +101,7 @@ runs:
         echo "${{ env.VERSIONFILE }}"
         echo $VERSIONFILE
 
+        echo -n docker-image-$base64OfImage
         echo "DOCKERVARNAME=`echo -n docker-image-$base64OfImage`" >> $GITHUB_ENV
         echo "${{ env.DOCKERVARNAME }}"
         echo "$DOCKERVARNAME"
