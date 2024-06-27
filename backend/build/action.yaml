@@ -92,40 +92,40 @@ runs:
     - name: Setup Paths
       shell: bash
       run: |
-        echo "IMAGEBASE64=$(echo -n ${{ inputs.docker_repo }} | base64)"
+        echo "base64OfImage=$(echo -n ${{ inputs.docker_repo }} | base64)"
         
-        echo "DockerImageFile=$(echo -n ./docker-$IMAGEBASE64.tar)" >> $GITHUB_ENV
-        echo $DockerImageFile
+        echo "DOCKERIMAGEFILE=$(echo -n ./docker-$base64OfImage.tar)" >> $GITHUB_ENV
+        echo $DOCKERIMAGEFILE
 
-        echo "VersionFile=$(echo -n VERSION-$IMAGEBASE64)" >> $GITHUB_ENV
-        echo $VersionFile
+        echo "VERSIONFILE=$(echo -n VERSION-$base64OfImage)" >> $GITHUB_ENV
+        echo $VERSIONFILE
 
-        echo "DockerVarName=$(echo -n docker-image-$IMAGEBASE64)" >> $GITHUB_ENV
-        echo $DockerVarName
+        echo "DOCKERVARNAME=$(echo -n docker-image-$base64OfImage)" >> $GITHUB_ENV
+        echo $DOCKERVARNAME
 
-        echo "VersionVarName=$(echo -n version-from-build-$IMAGEBASE64)" >> $GITHUB_ENV
-        echo $VersionVarName
+        echo "VERSIONFILENAME=$(echo -n version-from-build-$base64OfImage)" >> $GITHUB_ENV
+        echo $VERSIONFILENAME
 
     #Build Docker Image
     - name: Build Docker Image
       shell: bash
       run: |
-        echo $DockerImageFile
+        echo $DOCKERIMAGEFILE
         docker image build --file ${{ inputs.docker_file }} --build-arg GITHUB_SSH_KEY="${{ inputs.ssh_git_key}}" --tag $TAG .
-        docker image save --output $DockerImageFile $TAG
+        docker image save --output $DOCKERIMAGEFILE $TAG
 
     #Save Artifact for Push Docker Job
     - uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.DockerVarName }}
-        path: ${{ env.DockerImageFile }}
+        name: ${{ env.DOCKERVARNAME }}
+        path: ${{ env.DOCKERIMAGEFILE }}
         retention-days: 5
     
     #Save Artifact for Push Docker Job
     - uses: actions/upload-artifact@v4
       with:
-        name: ${{ env.VersionVarName }}
-        path: $VersionFile
+        name: ${{ env.VERSIONFILENAME }}
+        path: $VERSIONFILE
         retention-days: 5
 
     #Scan local Docker Image With Trivy
