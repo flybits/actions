@@ -98,7 +98,6 @@ runs:
         echo $DockerImageFile
 
         echo "VersionFile=$(echo -n VERSION-$IMAGEBASE64)" >> $GITHUB_ENV
-        cp VERSION $VersionFile
         echo $VersionFile
 
         echo "DockerVarName=$(echo -n docker-image-$IMAGEBASE64)" >> $GITHUB_ENV
