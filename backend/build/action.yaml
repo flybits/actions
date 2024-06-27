@@ -93,42 +93,32 @@ runs:
       shell: bash
       run: |
         echo "base64OfImage=$(echo -n ${{ inputs.docker_repo }} | base64)"
-        
-        echo "DOCKERIMAGEFILE=`echo -n ./docker-$base64OfImage.tar`" >> $GITHUB_ENV
-        echo "${{ env.DOCKERIMAGEFILE }}"
+        echo $base64OfImage
 
-        echo "VERSIONFILE=`echo -n VERSION-$base64OfImage`" >> $GITHUB_ENV
-        echo "${{ env.VERSIONFILE }}"
-        echo $VERSIONFILE
-
+        base64OfImage=`echo -n ${{ inputs.docker_repo }} | base64`
+        echo $base64OfImage
         echo -n docker-image-$base64OfImage
-        echo "DOCKERVARNAME=`echo -n docker-image-$base64OfImage`" >> $GITHUB_ENV
-        echo "${{ env.DOCKERVARNAME }}"
-        echo "$DOCKERVARNAME"
 
-        echo "VERSIONFILENAME=`echo -n version-from-build-$base64OfImage`" >> $GITHUB_ENV
-        echo "${{ env.VERSIONFILENAME }}"
 
     #Build Docker Image
     - name: Build Docker Image
       shell: bash
       run: |
-        echo $DOCKERIMAGEFILE
         docker image build --file ${{ inputs.docker_file }} --build-arg GITHUB_SSH_KEY="${{ inputs.ssh_git_key}}" --tag $TAG .
-        docker image save --output $DOCKERIMAGEFILE $TAG
+        docker image save --output ./docker.tar $TAG
 
     #Save Artifact for Push Docker Job
     - uses: actions/upload-artifact@v4
       with:
         name: ${{ env.DOCKERVARNAME }}
-        path: ${{ env.DOCKERIMAGEFILE }}
+        path: ./docker.tar
         retention-days: 5
     
     #Save Artifact for Push Docker Job
     - uses: actions/upload-artifact@v4
       with:
         name: ${{ env.VERSIONFILENAME }}
-        path: ${{ env.VERSIONFILE }}
+        path: VERSION
         retention-days: 5
 
     #Scan local Docker Image With Trivy
