@@ -38,12 +38,12 @@ inputs:
 runs:
   using: "composite"
   steps:
-    #If it is renovate PR ignore this action and success
+    #If it is a Renovate PR, ignore this action and exit successfully
     - name: Skip if Renovate PR
-      if: contains(github.ref, 'renovate')
+      if: startsWith(github.ref, 'refs/heads/renovate/')
       shell: bash
-      run: exit 0
-        
+      run: echo "Skipping action for Renovate PR"; exit 0
+
     - uses: actions/checkout@v4
       with:
         ref: ${{ github.ref }}
@@ -70,13 +70,13 @@ runs:
     #Setup Paths
     #This is needed because its possible there are cases where multiple actions need to be run such as auth;
     #Auth has two images that get deployed one for the Auth service and one for the Auth User Deletion cronjob
-    #In order to avoid collisions between the two jobs we need to have different names for the files that get 
+    #In order to avoid collisions between the two jobs we need to have different names for the files that get
     #uploaded.
     - name: Setup Paths
       shell: bash
       run: |
         base64OfImage=`echo -n ${{ inputs.docker_repo }} | base64`
-        
+
         echo "DOCKERIMAGEFILE=`echo -n docker-$base64OfImage.tar`" >> $GITHUB_ENV
         echo "VERSIONFILE=`echo -n VERSION-$base64OfImage`" >> $GITHUB_ENV
         echo "DOCKERVARNAME=`echo -n docker-image-$base64OfImage`" >> $GITHUB_ENV
@@ -101,7 +101,7 @@ runs:
         VERSION=$(cat /tmp/$VERSIONFILE)
         echo "VERSION: $VERSION"
         echo "TAG=${{ inputs.docker_repo }}:${VERSION}" >> $GITHUB_ENV
-    
+
     #Push Docker Image
     - name: Push Docker Image
       shell: bash
@@ -117,14 +117,14 @@ runs:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       run: |
         echo "IMAGE: $TAG"
-        
+
         git config --global user.name "flybitsbot"
         git config --global user.email "dev@flybits.com"
-        
+
         mkdir git
         cd git
         git clone git@github.com:flybits/gitops.git .
-        
+
         update_image_and_push () {
           kustomize edit set image $TAG
 
@@ -149,7 +149,7 @@ runs:
             echo "nothing to deploy"
           fi
         }
-        
+
         BRANCH=main
 
         # development release
@@ -158,7 +158,7 @@ runs:
           BRANCH=develop
           git checkout $BRANCH
           cd env/development
-        
+
         # staging release
         elif [[ ${{ inputs.type }} == "staging" ]]; then
           echo "Development release..."
