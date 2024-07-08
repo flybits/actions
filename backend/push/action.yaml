@@ -40,9 +40,8 @@ runs:
   steps:
     #If it is a Renovate PR, ignore this action and exit successfully
     - name: Skip if Renovate PR
-      if: startsWith(github.ref, 'refs/heads/renovate/')
       shell: bash
-      run: echo "Skipping action for Renovate PR"; exit 0
+      run: exit 0
 
     - uses: actions/checkout@v4
       with:
