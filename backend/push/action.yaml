@@ -40,7 +40,8 @@ runs:
   steps:
     #If it is renovate PR ignore this action and success
     - name: Skip if Renovate PR
-      if: contains(github.ref, "renovate")'
+      if: contains(github.ref, 'renovate')
+      shell: bash
       run: exit 0
         
     - uses: actions/checkout@v4
