@@ -94,6 +94,7 @@ runs:
         [[ "${{ inputs.ios_appstore_api_key_id }}" ]] || { echo "ios_appstore_api_key_id input is empty" ; exit 1; }
         [[ "${{ inputs.ios_appstore_issuer_id }}" ]] || { echo "ios_appstore_issuer_id input is empty" ; exit 1; }
         [[ "${{ inputs.ipa_name }}" ]] || { echo "ipa_name input is empty" ; exit 1; }
+        [[ "${{ inputs.version_filepath }}" ]] || { echo "version_filepath input is empty" ; exit 1; }
 
     #Checkout Code
     - name: checkout repository
