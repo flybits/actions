@@ -100,7 +100,6 @@ runs:
     - name: checkout repository
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0
         token: ${{ inputs.github_token }}
 
       #Setup SSH Keys
