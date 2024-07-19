@@ -156,7 +156,7 @@ runs:
           version-source: file
           version-file: ${{ inputs.version_filepath }}
           release-version-cut-prerelease: true
-          next-version-increment-patch: ${{ contains(inputs.version, 'minor') }}
+          next-version-increment-patch: ${{ contains(inputs.version, 'patch') }}
           next-version-increment-minor: ${{ contains(inputs.version, 'minor') }}
           next-version-increment-major: ${{ contains(inputs.version, 'major') }}    
 

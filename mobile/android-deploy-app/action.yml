@@ -1,4 +1,4 @@
-name: Deployment
+name: Android App Deployment
 author: Petar Kramaric
 description: GitHub action for deploying android applications
 inputs:
