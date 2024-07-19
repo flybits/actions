@@ -59,6 +59,10 @@ inputs:
   tag_suffix:
     description: The tag suffix that should be used 
     required: optional
+  changes_not_sent_for_review:
+    description: The changesNotSentForReview flag for Google Play Console upload
+    required: true
+  
 
 runs:
   using: "composite"
