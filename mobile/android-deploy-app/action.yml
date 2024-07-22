@@ -61,7 +61,7 @@ inputs:
     required: optional
   changes_not_sent_for_review:
     description: The changesNotSentForReview flag for Google Play Console upload
-    required: true
+    default: 'true'
 
 runs:
   using: "composite"
