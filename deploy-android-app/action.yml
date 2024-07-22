@@ -81,6 +81,7 @@ runs:
         [[ "${{ inputs.alias_password }}" ]] || { echo "alias_password input is empty" ; exit 1; }
         [[ "${{ inputs.package_name }}" ]] || { echo "package_name input is empty" ; exit 1; }
         [[ "${{ inputs.github_token }}" ]] || { echo "github_token input is empty" ; exit 1; }
+        echo Changes not sent for review: ${{ inputs.changes_not_sent_for_review }}
 
     #Checkout Code
     - name: Checkout Code
