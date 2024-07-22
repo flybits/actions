@@ -59,6 +59,9 @@ inputs:
   tag_suffix:
     description: The tag suffix that should be used 
     required: optional
+  changes_not_sent_for_review:
+    description: The changesNotSentForReview flag for Google Play Console upload
+    default: 'true'
 
 runs:
   using: "composite"
@@ -198,7 +201,7 @@ runs:
       with:
         serviceAccountJson: service_account.json
         packageName: ${{ inputs.package_name }}
-        changesNotSentForReview: true
+        changesNotSentForReview: ${{ inputs.changes_not_sent_for_review }}
         releaseFiles: ${{steps.sign_app.outputs.signedReleaseFile}}
         track: internal
 
