@@ -23,10 +23,10 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Validate inputs
+    - name: Validate Github Actions' inputs
       shell: bash
       run: |
-        [[ "${{ inputs.bot-token }}" ]] || { echo "bot-token input is empty" ; exit 1; }
+        [[ "${{ inputs.bot-token }}" ]] || { echo "bot-token input is empty"; exit 1; }
 
     - name: Notify Slack
       uses: slackapi/slack-github-action@v1.26.0
@@ -39,21 +39,21 @@ runs:
           {
             "attachments": [
               {
-                "color": "007A5A",
+                "color": "06B200",
                 "fields": [
                   {
-                    "title": "Web Applicaiton",
+                    "title": "Web Application",
                     "short": true,
                     "value": "${{ inputs.web-app-name }}"
                   },
                   {
                     "title": "Status",
                     "short": true,
-                    "value": "Deployed 🥂"
+                    "value": ":badge-success: Deployed"
                   }
                 ],
                 "footer_icon": "https://github.com/${{ github.triggering_actor }}.png",
-                "footer": "By ${{ github.actor }}"
+                "footer": "Triggered by ${{ github.triggering_actor }}"
               }
             ]
           }
