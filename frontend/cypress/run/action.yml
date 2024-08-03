@@ -30,8 +30,15 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Validate Github Actions' inputs
+      shell: bash
+      run: |
+        [[ "${{ inputs.flybits-project-environment }}" ]] || { echo "flybits-project-environment input is empty"; exit 1; }
+        [[ "${{ inputs.flybits-project-jwt }}" ]] || { echo "flybits-project-jwt input is empty"; exit 1; }
+        [[ "${{ inputs.github-personal-access-token }}" ]] || { echo "github-personal-access-token input is empty"; exit 1; }
+        [[ "${{ inputs.slack-bot-token }}" ]] || { echo "slack-bot-token input is empty"; exit 1; }
+
     - name: Checkout the repository
-      if: ${{ inputs.github-personal-access-token }}
       uses: actions/checkout@v4
       with:
         ref: refs/heads/main
@@ -42,7 +49,7 @@ runs:
       uses: flybits/actions/frontend/cypress/test@main
       with:
         cypress-spec: ${{ inputs.cypress-spec }}
-        flybits-project-environment: ${{ inputs.flybits-environment }}
+        flybits-project-environment: ${{ inputs.flybits-project-environment }}
         flybits-project-jwt: ${{ inputs.flybits-project-jwt }}
 
     - if: ${{ failure() }}
@@ -50,5 +57,5 @@ runs:
       uses: flybits/actions/frontend/slack/job-failure@main
       with:
         bot-token: ${{ inputs.slack-bot-token }}
-        message: '😒 Testing failed'
+        message: '😒 Cypress testing failed'
         web-app-name: ${{ inputs.web-app-name }}
