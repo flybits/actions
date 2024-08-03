@@ -18,16 +18,17 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Validate inputs
+    - name: Validate Github Actions' inputs
       shell: bash
       run: |
-        [[ "${{ inputs.github-personal-access-token }}" ]] || { echo "github-personal-access-token input is empty" ; exit 1; }
-        [[ "${{ inputs.slack-bot-token }}" ]] || { echo "slack-bot-token input is empty" ; exit 1; }
+        [[ "${{ inputs.github-personal-access-token }}" ]] || { echo "github-personal-access-token input is empty"; exit 1; }
+        [[ "${{ inputs.slack-bot-token }}" ]] || { echo "slack-bot-token input is empty"; exit 1; }
 
     - name: Install Node and NPM packages
       uses: flybits/actions/frontend/node-npm/install@main
       with:
         github-personal-access-token: ${{ inputs.github-personal-access-token }}
+        slack-bot-token: ${{ inputs.slack-bot-token }}
 
     - name: Run test
       shell: bash
@@ -38,5 +39,5 @@ runs:
       uses: flybits/actions/frontend/slack/job-failure@main
       with:
         bot-token: ${{ inputs.slack-bot-token }}
-        message: '😒 Testing failed'
+        message: '😒 App testing failed'
         web-app-name: ${{ inputs.web-app-name }}
