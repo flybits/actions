@@ -18,6 +18,12 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Validate Github Actions' inputs
+      shell: bash
+      run: |
+        [[ "${{ inputs.github-personal-access-token }}" ]] || { echo "github-personal-access-token input is empty"; exit 1; }
+        [[ "${{ inputs.slack-bot-token }}" ]] || { echo "slack-bot-token input is empty"; exit 1; }
+
     - name: Checkout the repository
       uses: actions/checkout@v4
 
