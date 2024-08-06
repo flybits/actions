@@ -1,5 +1,5 @@
 name: Run CodeQL analysis
-description: Runes the CodeQL analysis to find security vulnerabilities
+description: Runs the CodeQL analysis to find security vulnerabilities
 
 inputs:
   language:
