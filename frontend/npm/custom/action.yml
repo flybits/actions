@@ -1,13 +1,13 @@
-name: Build
-description: Runs nx's build command
+name: Custom Command
+description: Runs arbitrary package scripts's command
 
 inputs:
-  environment:
-    description: 'The name of the environment'
-    required: true
-
   github-personal-access-token:
     description: 'A token used for accessing private NPM packages (published by Flybits Inc.)'
+    required: true
+
+  npm-run-script-command:
+    description: 'The name of the command to run in the package.json file'
     required: true
 
   slack-bot-token:
@@ -25,8 +25,8 @@ runs:
     - name: Validate Github Actions' inputs
       shell: bash
       run: |
-        [[ "${{ inputs.environment }}" ]] || { echo "environment input is empty"; exit 1; }
         [[ "${{ inputs.github-personal-access-token }}" ]] || { echo "github-personal-access-token input is empty"; exit 1; }
+        [[ "${{ inputs.npm-run-script-command }}" ]] || { echo "npm-run-script-command input is empty"; exit 1; }
         [[ "${{ inputs.slack-bot-token }}" ]] || { echo "slack-bot-token input is empty"; exit 1; }
 
     - name: Install Node and NPM packages
@@ -34,15 +34,16 @@ runs:
       with:
         github-personal-access-token: ${{ inputs.github-personal-access-token }}
         slack-bot-token: ${{ inputs.slack-bot-token }}
+        web-app-name: ${{ inputs.web-app-name }}
 
-    - name: Run build
+    - name: Run custom command
       shell: bash
-      run: npx nx build:${{ inputs.environment }}
+      run: npm run ${{ inputs.npm-run-script-command }}
 
     - if: ${{ failure() }}
       name: Notify Slack
       uses: flybits/actions/frontend/slack/job-failure@main
       with:
         bot-token: ${{ inputs.slack-bot-token }}
-        message: '😩 Building failed'
+        message: '😞 The command `npm run ${{ inputs.npm-run-script-command }}` failed'
         web-app-name: ${{ inputs.web-app-name }}

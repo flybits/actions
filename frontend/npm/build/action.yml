@@ -1,5 +1,5 @@
 name: Build
-description: Runs nx's build command
+description: Runs build command
 
 inputs:
   environment:
@@ -34,10 +34,11 @@ runs:
       with:
         github-personal-access-token: ${{ inputs.github-personal-access-token }}
         slack-bot-token: ${{ inputs.slack-bot-token }}
+        web-app-name: ${{ inputs.web-app-name }}
 
     - name: Run build
       shell: bash
-      run: npx nx build:${{ inputs.environment }}
+      run: npm run build:${{ inputs.environment }}
 
     - if: ${{ failure() }}
       name: Notify Slack

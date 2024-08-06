@@ -1,5 +1,5 @@
 name: Notify Slack
-description: Publishes a message to Slack when a job fails
+description: Publishes a message to Slack if the deployment fails
 
 inputs:
   bot-token:
@@ -9,11 +9,6 @@ inputs:
   channel-id:
     description: 'The Slack channel to post the message to'
     default: 'C9YA9JUKG'
-    required: false
-
-  message:
-    description: 'The message to post to Slack'
-    default: '☠️ Job failed'
     required: false
 
   update-ts:
@@ -34,7 +29,7 @@ runs:
         [[ "${{ inputs.bot-token }}" ]] || { echo "bot-token input is empty"; exit 1; }
 
     - name: Notify Slack
-      uses: 'slackapi/slack-github-action@v1.26.0'
+      uses: slackapi/slack-github-action@v1.26.0
       env:
         SLACK_BOT_TOKEN: ${{ inputs.bot-token }}
       with:
@@ -44,7 +39,7 @@ runs:
           {
             "attachments": [
               {
-                "title": "${{ inputs.message }}",
+                "title": "Failed to deploy the web application!",
                 "title_link": "${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}",
                 "color": "ff0000",
                 "fields": [

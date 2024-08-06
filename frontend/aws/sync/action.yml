@@ -39,14 +39,14 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Validate inputs
+    - name: Validate Github Actions' inputs
       shell: bash
       run: |
-        [[ "${{ inputs.aws-cloudfront-distribution-id }}" ]] || { echo "aws-cloudfront-distribution-id input is empty" ; exit 1; }
-        [[ "${{ inputs.aws-iam-role }}" ]] || { echo "aws-iam-role input is empty" ; exit 1; }
-        [[ "${{ inputs.aws-s3-bucket-name }}" ]] || { echo "aws-s3-bucket-name input is empty" ; exit 1; }
-        [[ "${{ inputs.aws-s3-bucket-region }}" ]] || { echo "aws-s3-bucket-region input is empty" ; exit 1; }
-        [[ "${{ inputs.slack-bot-token }}" ]] || { echo "slack-bot-token input is empty" ; exit 1; }
+        [[ "${{ inputs.aws-cloudfront-distribution-id }}" ]] || { echo "aws-cloudfront-distribution-id input is empty"; exit 1; }
+        [[ "${{ inputs.aws-iam-role }}" ]] || { echo "aws-iam-role input is empty"; exit 1; }
+        [[ "${{ inputs.aws-s3-bucket-name }}" ]] || { echo "aws-s3-bucket-name input is empty"; exit 1; }
+        [[ "${{ inputs.aws-s3-bucket-region }}" ]] || { echo "aws-s3-bucket-region input is empty"; exit 1; }
+        [[ "${{ inputs.slack-bot-token }}" ]] || { echo "slack-bot-token input is empty"; exit 1; }
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
@@ -54,20 +54,41 @@ runs:
         role-to-assume: ${{ inputs.aws-iam-role }}
         aws-region: ${{ inputs.aws-s3-bucket-region }}
 
+    - name: Generate build.json file
+      shell: bash
+      run: |
+        echo "{
+          \"buildTimestamp\": \"$(date +%s)\",
+          \"buildTimestampEST\": \"$(TZ=America/Toronto date -Iseconds)\",
+          \"gitRef\": \"${{ github.ref_name }}\",
+          \"gitSha\": \"${{ github.sha }}\",
+          \"workflowActor\": \"${{ github.triggering_actor }}\",
+          \"workflowRunUrl\": \"${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}\",
+        }
+        " > ${{ inputs.dist-folder-name }}/build.json
+
+        if [ $? -ne 0 ]; then
+          echo "Failed to generate build.json file"
+          exit 1
+        fi
+
     - name: Copy "dist" folder's contents to S3 bucket
       shell: bash
-            run: |
+      run: |
         aws s3 sync ${{ inputs.dist-folder-name }} s3://${{ inputs.aws-s3-bucket-name }} --delete
+
         if [ $? -ne 0 ]; then
-          echo "Failed to sync folder with S3 bucket"
+          echo "Failed to sync folder to S3 bucket"
           exit 1
         fi
 
     - name: Invalidate CloudFront cache
       shell: bash
       run: |
-                if [ $? -ne 0 ]; then
-          echo "Failed to create CloudFront invalidation"
+        INVALIDATION_JSON=$(aws cloudfront create-invalidation --distribution-id ${{ inputs.aws-cloudfront-distribution-id }} --paths "/*")
+
+        if [ $? -ne 0 ]; then
+          echo "Failed to invalidate Cloudfront's cache"
           exit 1
         fi
 
@@ -77,8 +98,10 @@ runs:
         echo "Waiting for CloudFront invalidation to complete..."
 
         while [ "$INVALIDATION_STATUS" != "Completed" ]; do
-                    if [ $? -ne 0 ]; then
-            echo "Failed to get CloudFront invalidation status"
+          INVALIDATION_JSON=$(aws cloudfront get-invalidation --distribution-id ${{ inputs.aws-cloudfront-distribution-id }} --id $INVALIDATION_ID)
+
+          if [ $? -ne 0 ]; then
+            echo "Failed to get Cloudfront's invalidation status"
             exit 1
           fi
 

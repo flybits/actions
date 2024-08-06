@@ -1,11 +1,7 @@
-name: Build
-description: Runs nx's build command
+name: Lint
+description: Runs lint command
 
 inputs:
-  environment:
-    description: 'The name of the environment'
-    required: true
-
   github-personal-access-token:
     description: 'A token used for accessing private NPM packages (published by Flybits Inc.)'
     required: true
@@ -25,7 +21,6 @@ runs:
     - name: Validate Github Actions' inputs
       shell: bash
       run: |
-        [[ "${{ inputs.environment }}" ]] || { echo "environment input is empty"; exit 1; }
         [[ "${{ inputs.github-personal-access-token }}" ]] || { echo "github-personal-access-token input is empty"; exit 1; }
         [[ "${{ inputs.slack-bot-token }}" ]] || { echo "slack-bot-token input is empty"; exit 1; }
 
@@ -34,15 +29,16 @@ runs:
       with:
         github-personal-access-token: ${{ inputs.github-personal-access-token }}
         slack-bot-token: ${{ inputs.slack-bot-token }}
+        web-app-name: ${{ inputs.web-app-name }}
 
-    - name: Run build
+    - name: Run lint
       shell: bash
-      run: npx nx build:${{ inputs.environment }}
+      run: npm run lint
 
     - if: ${{ failure() }}
       name: Notify Slack
       uses: flybits/actions/frontend/slack/job-failure@main
       with:
         bot-token: ${{ inputs.slack-bot-token }}
-        message: '😩 Building failed'
+        message: '🧐 Linting failed'
         web-app-name: ${{ inputs.web-app-name }}
