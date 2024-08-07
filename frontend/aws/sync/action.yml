@@ -3,7 +3,7 @@ description: Uploads the 'dist' folder to an S3 bucket and invalidates CloudFron
 
 inputs:
   aws-cloudfront-distribution-id:
-    description: 'The ID of the CloudFront distribution'
+    description: 'The distribution ID of the CloudFront'
     required: true
 
   aws-iam-role:
@@ -18,13 +18,23 @@ inputs:
     description: 'The region of the S3 bucket'
     required: true
 
-  dist-folder-name:
-    description: 'The name of the folder to sync with S3'
-    default: ${{ github.event.repository.name }}
+  aws-s3-sync-delete:
+    description: 'Whether to delete files in the destination folder that are not present in the dist folder'
+    default: false
+    required: false
+
+  aws-s3-sync-dryrun:
+    description: 'Whether to perform a dry run of the sync operation'
+    default: false
     required: false
 
   dest-folder-name:
     description: 'The name of the folder to copy files to'
+    required: false
+
+  dist-folder-name:
+    description: 'The name of the folder to sync with S3'
+    default: ${{ github.event.repository.name }}
     required: false
 
   slack-bot-token:
@@ -57,6 +67,8 @@ runs:
     - name: Generate build.json file
       shell: bash
       run: |
+        [ ! -d ${{ inputs.dist-folder-name }} ] && mkdir ${{ inputs.dist-folder-name }}
+
         echo "{
           \"buildTimestamp\": \"$(date +%s)\",
           \"buildTimestampEST\": \"$(TZ=America/Toronto date -Iseconds)\",
@@ -75,7 +87,22 @@ runs:
     - name: Copy "dist" folder's contents to S3 bucket
       shell: bash
       run: |
-        aws s3 sync ${{ inputs.dist-folder-name }} s3://${{ inputs.aws-s3-bucket-name }} --delete
+        SYNC_COMMAND="aws s3 sync ${{ inputs.dist-folder-name }} s3://${{ inputs.aws-s3-bucket-name }}"
+
+        if [ -n "${{ inputs.dest-folder-name }}" ]; then
+          SYNC_COMMAND="aws s3 sync ${{ inputs.dist-folder-name }} s3://${{ inputs.aws-s3-bucket-name }}/${{ inputs.dest-folder-name }}"
+        fi
+
+        if [ "${{ inputs.aws-s3-sync-delete }}" = "true" ]; then
+          SYNC_COMMAND="${SYNC_COMMAND} --delete"
+        fi
+
+        if [ "${{ inputs.aws-s3-sync-dryrun }}" = "true" ]; then
+          SYNC_COMMAND="${SYNC_COMMAND} --dryrun"
+        fi
+
+        echo $SYNC_COMMAND
+        $(echo $SYNC_COMMAND)
 
         if [ $? -ne 0 ]; then
           echo "Failed to sync folder to S3 bucket"
