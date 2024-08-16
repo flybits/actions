@@ -6,6 +6,11 @@ inputs:
     description: 'A token used for accessing private NPM packages (published by Flybits Inc.)'
     required: true
 
+  node-version:
+    description: 'The version of Node to use'
+    default: 'lts/*'
+    required: false
+
   slack-bot-token:
     description: 'A bot token to publish a message on Slack'
     required: true
@@ -30,7 +35,7 @@ runs:
     - name: Install node
       uses: actions/setup-node@v4
       with:
-        node-version: 'lts/Iron'
+        node-version: ${{ inputs.node-version }}
         cache: 'npm'
 
     - name: Restore packages from cache
