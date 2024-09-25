@@ -20,6 +20,10 @@ inputs:
     description: 'The timestamp of the Slack message to update'
     required: false
 
+  thread-ts:
+    description: 'The timestamp of the parent message to reply to'
+    required: false
+
   web-app-name:
     description: 'The name of your web application'
     default: ${{ github.event.repository.name }}
@@ -42,25 +46,6 @@ runs:
         update-ts: ${{ inputs.update-ts }}
         payload: |
           {
-            "attachments": [
-              {
-                "title": "${{ inputs.message }}",
-                "title_link": "${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}",
-                "color": "ff0000",
-                "fields": [
-                  {
-                    "title": "Web Application",
-                    "short": true,
-                    "value": "${{ inputs.web-app-name }}"
-                  },
-                  {
-                    "title": "Status",
-                    "short": true,
-                    "value": ":badge-failure: Failed"
-                  }
-                ],
-                "footer_icon": "https://github.com/${{ github.triggering_actor }}.png",
-                "footer": "Triggered by ${{ github.triggering_actor }}"
-              }
-            ]
+            "thread_ts": "${{ inputs.thread-ts }}",
+            "text": "<${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}|${{ inputs.message }}>"
           }

@@ -41,6 +41,10 @@ inputs:
     description: 'A bot token to publish a message on Slack'
     required: true
 
+  slack-ts:
+    description: 'The timestamp of the Slack message'
+    required: false
+
   web-app-name:
     description: 'A human-readable name of your web application'
     default: ${{ github.event.repository.name }}
@@ -144,4 +148,5 @@ runs:
       with:
         bot-token: ${{ inputs.slack-bot-token }}
         message: '🤔 AWS sync failed'
+        thread-ts: ${{ inputs.slack-ts }}
         web-app-name: ${{ inputs.web-app-name }}
