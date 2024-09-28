@@ -6,6 +6,11 @@ inputs:
     description: 'A token used for accessing private repository (created under Flybits Inc. organization)'
     required: true
 
+  notify-slack-on-failure:
+    description: 'Whether to notify a Slack channel if the job fails'
+    default: false
+    required: false
+
 runs:
   using: 'composite'
   steps:
@@ -21,3 +26,12 @@ runs:
         prefix_case_sensitive: false
         min_length: 8
         github_token: ${{ inputs.github-personal-access-token }}
+
+    - if: ${{ inputs.notify-slack-on-failure == 'true' && failure() }}
+      name: Notify Slack
+      uses: flybits/frontend-github-actions/slack/job-failure@main
+      with:
+        bot-token: ${{ inputs.slack-bot-token }}
+        message: '😒 Pull request's title verification failed'
+        thread-ts: ${{ inputs.slack-ts }}
+        web-app-name: ${{ inputs.web-app-name }}

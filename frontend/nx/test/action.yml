@@ -6,9 +6,14 @@ inputs:
     description: 'A token used for accessing private NPM packages (published by Flybits Inc.)'
     required: true
 
+  notify-slack-on-failure:
+    description: 'Whether to notify a Slack channel if the job fails'
+    default: false
+    required: false
+
   slack-bot-token:
     description: 'A bot token to publish a message on Slack'
-    required: true
+    required: false
 
   slack-ts:
     description: 'The timestamp of the Slack message'
@@ -26,7 +31,6 @@ runs:
       shell: bash
       run: |
         [[ "${{ inputs.github-personal-access-token }}" ]] || { echo "github-personal-access-token input is empty"; exit 1; }
-        [[ "${{ inputs.slack-bot-token }}" ]] || { echo "slack-bot-token input is empty"; exit 1; }
 
     - name: Install Node and NPM packages
       uses: flybits/actions/frontend/node-npm/install@main
@@ -39,7 +43,7 @@ runs:
       shell: bash
       run: npx nx test
 
-    - if: ${{ failure() }}
+    - if: ${{ inputs.notify-slack-on-failure == 'true' && failure() }}
       name: Notify Slack
       uses: flybits/actions/frontend/slack/job-failure@main
       with:

@@ -14,9 +14,14 @@ inputs:
     description: 'A JSON Web Token to access Experience Studio'
     required: true
 
+  notify-slack-on-failure:
+    description: 'Whether to notify a Slack channel if the job fails'
+    default: false
+    required: false
+
   slack-bot-token:
     description: 'A bot token to publish a message on Slack'
-    required: true
+    required: false
 
   slack-ts:
     description: 'The timestamp of the Slack message'
@@ -56,7 +61,7 @@ runs:
           cypress/screenshots
           cypress/videos
 
-    - if: ${{ failure() }}
+    - if: ${{ inputs.notify-slack-on-failure == 'true' && failure() }}
       name: Notify Slack
       uses: flybits/frontend-github-actions/slack/job-failure@main
       with:
