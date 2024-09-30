@@ -11,9 +11,18 @@ inputs:
     default: 'lts/*'
     required: false
 
+  notify-slack-on-failure:
+    description: 'Whether to notify a Slack channel if the job fails'
+    default: false
+    required: false
+
   slack-bot-token:
     description: 'A bot token to publish a message on Slack'
-    required: true
+    required: false
+
+  slack-ts:
+    description: 'The timestamp of the Slack message'
+    required: false
 
   web-app-name:
     description: 'A human-readable name of your web application'
@@ -27,7 +36,6 @@ runs:
       shell: bash
       run: |
         [[ "${{ inputs.github-personal-access-token }}" ]] || { echo "github-personal-access-token input is empty"; exit 1; }
-        [[ "${{ inputs.slack-bot-token }}" ]] || { echo "slack-bot-token input is empty"; exit 1; }
 
     - name: Checkout the repository
       uses: actions/checkout@v4
@@ -59,10 +67,11 @@ runs:
       shell: bash
       run: yarn install --frozen-lockfile
 
-    - if: ${{ failure() }}
+    - if: ${{ inputs.notify-slack-on-failure == 'true' && failure() }}
       name: Notify Slack
       uses: flybits/actions/frontend/slack/job-failure@main
       with:
         bot-token: ${{ inputs.slack-bot-token }}
         message: '😤 Installing Node or NPM packages failed'
+        thread-ts: ${{ inputs.slack-ts }}
         web-app-name: ${{ inputs.web-app-name }}

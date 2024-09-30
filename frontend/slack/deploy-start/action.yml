@@ -11,10 +11,20 @@ inputs:
     default: 'C9YA9JUKG'
     required: false
 
+  environment:
+    description: 'The name of the environment'
+    default: 'Not Specified'
+    required: false
+
   web-app-name:
     description: 'The name of your web application'
     default: ${{ github.event.repository.name }}
     required: false
+
+outputs:
+  ts:
+    description: 'The timestamp of the Slack message'
+    value: ${{ steps.notify-slack.outputs.ts }}
 
 runs:
   using: 'composite'
@@ -25,6 +35,7 @@ runs:
         [[ "${{ inputs.bot-token }}" ]] || { echo "bot-token input is empty"; exit 1; }
 
     - name: Notify Slack
+      id: notify-slack
       uses: slackapi/slack-github-action@v1.26.0
       env:
         SLACK_BOT_TOKEN: ${{ inputs.bot-token }}
@@ -32,7 +43,7 @@ runs:
         channel-id: ${{ inputs.channel-id }}
         payload: |
           {
-            "text": "Deploying `${{ inputs.web-app-name }}` to `staging`! 🤩",
+            "text": "Deploying `${{ inputs.web-app-name }}` to *${{ inputs.environment }}*! 🤩",
             "blocks": [
               {
                 "type": "context",
@@ -44,7 +55,7 @@ runs:
                   },
                   {
                     "type": "mrkdwn",
-                    "text": "Deploying <${{ github.event.repository.html_url }}|${{ inputs.web-app-name }}> to *staging*"
+                    "text": "Deploying <${{ github.event.repository.html_url }}|${{ inputs.web-app-name }}> to *${{ inputs.environment }}*! 🤩"
                   }
                 ]
               },

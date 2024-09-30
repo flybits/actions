@@ -10,9 +10,18 @@ inputs:
     description: 'The name of the command to run in the package.json file'
     required: true
 
+  notify-slack-on-failure:
+    description: 'Whether to notify a Slack channel if the job fails'
+    default: false
+    required: false
+
   slack-bot-token:
     description: 'A bot token to publish a message on Slack'
-    required: true
+    required: false
+
+  slack-ts:
+    description: 'The timestamp of the Slack message'
+    required: false
 
   web-app-name:
     description: 'A human-readable name of your web application'
@@ -27,7 +36,6 @@ runs:
       run: |
         [[ "${{ inputs.github-personal-access-token }}" ]] || { echo "github-personal-access-token input is empty"; exit 1; }
         [[ "${{ inputs.npm-run-script-command }}" ]] || { echo "npm-run-script-command input is empty"; exit 1; }
-        [[ "${{ inputs.slack-bot-token }}" ]] || { echo "slack-bot-token input is empty"; exit 1; }
 
     - name: Install Node and NPM packages
       uses: flybits/actions/frontend/node-npm/install@main
@@ -40,10 +48,11 @@ runs:
       shell: bash
       run: npm run ${{ inputs.npm-run-script-command }}
 
-    - if: ${{ failure() }}
+    - if: ${{ inputs.notify-slack-on-failure == 'true' && failure() }}
       name: Notify Slack
       uses: flybits/actions/frontend/slack/job-failure@main
       with:
         bot-token: ${{ inputs.slack-bot-token }}
         message: '😞 The command `npm run ${{ inputs.npm-run-script-command }}` failed'
+        thread-ts: ${{ inputs.slack-ts }}
         web-app-name: ${{ inputs.web-app-name }}
