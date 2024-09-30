@@ -44,7 +44,7 @@ runs:
           {
             "attachments": [
               {
-                "title": "Failed to deploy the web application!",
+                "title": "Failed to deploy the web application on *${{ inputs.environment }}*!",
                 "title_link": "${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}",
                 "color": "ff0000",
                 "fields": [

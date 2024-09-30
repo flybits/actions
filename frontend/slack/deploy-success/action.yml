@@ -44,6 +44,8 @@ runs:
           {
             "attachments": [
               {
+                "title": "Successfully deployed the web application on *${{ inputs.environment }}*!",
+                "title_link": "${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}",
                 "color": "06B200",
                 "fields": [
                   {
