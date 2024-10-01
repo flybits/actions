@@ -1,0 +1,93 @@
+name: Upload to Google Cloud Storage
+description: Uploads files/folders to a Google Cloud Storage bucket
+
+inputs:
+  gcp-parent:
+    description: 'Whether the parent directory should be included in GCS destination path'
+    default: true
+    required: false
+
+  gcp-service-account:
+    description: 'The service account to authenticate with Google Cloud'
+    required: true
+
+  gcp-upload-to-path:
+    description: 'The name of the folder to copy files to (must include the bucket name)'
+    required: true
+
+  gcp-upload-from-path:
+    description: 'The name of the folder to copy files from'
+    required: true
+
+  gcp-workload-identity-provider:
+    description: 'The Workload Identity Provider to authenticate with Google Cloud'
+    required: true
+
+  notify-slack-on-failure:
+    description: 'Whether to notify a Slack channel if the job fails'
+    default: false
+    required: false
+
+  slack-bot-token:
+    description: 'A bot token to publish a message on Slack'
+    required: false
+
+  slack-ts:
+    description: 'The timestamp of the Slack message'
+    required: false
+
+  web-app-name:
+    description: 'A human-readable name of your web application'
+    default: ${{ github.event.repository.name }}
+    required: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate Github Actions' inputs
+      shell: bash
+      run: |
+        [[ "${{ inputs.gcp-service-account }}" ]] || { echo "gcp-service-account input is empty"; exit 1; }
+        [[ "${{ inputs.gcp-upload-from-path }}" ]] || { echo "gcp-upload-from-path input is empty"; exit 1; }
+        [[ "${{ inputs.gcp-upload-to-path }}" ]] || { echo "gcp-upload-to-path input is empty"; exit 1; }
+        [[ "${{ inputs.gcp-workload-identity-provider }}" ]] || { echo "gcp-workload-identity-provider input is empty"; exit 1; }
+
+    - name: Authenticate to Google Cloud
+      uses: google-github-actions/auth@v2
+      with:
+        service_account: ${{ inputs.gcp-service-account }}
+        workload_identity_provider: ${{ inputs.gcp-workload-identity-provider }}
+
+    - name: Generate build.json file
+      shell: bash
+      run: |
+        echo "{
+          \"buildTimestamp\": \"$(date +%s)\",
+          \"buildTimestampEST\": \"$(TZ=America/Toronto date -Iseconds)\",
+          \"gitRef\": \"${{ github.ref_name }}\",
+          \"gitSha\": \"${{ github.sha }}\",
+          \"workflowActor\": \"${{ github.triggering_actor }}\",
+          \"workflowRunUrl\": \"${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}\",
+        }
+        " > ${{ inputs.gcp-upload-from-path }}/build.json
+
+        if [ $? -ne 0 ]; then
+          echo "Failed to generate build.json file"
+          exit 1
+        fi
+
+    - name: Copy files/folders to the bucket
+      uses: google-github-actions/upload-cloud-storage@v2
+      with:
+        destination: ${{ inputs.gcp-upload-to-path }}
+        parent: ${{ inputs.gcp-parent }}
+        path: ${{ inputs.gcp-upload-from-path }}
+
+    - if: ${{ inputs.notify-slack-on-failure == 'true' && failure() }}
+      name: Notify Slack
+      uses: flybits/frontend-github-actions/slack/job-failure@main
+      with:
+        bot-token: ${{ inputs.slack-bot-token }}
+        message: '🤔 GCP uploading failed'
+        thread-ts: ${{ inputs.slack-ts }}
+        web-app-name: ${{ inputs.web-app-name }}
