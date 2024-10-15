@@ -148,16 +148,26 @@ runs:
 
         # development release
         if [[ ${{ inputs.type }} == "dev" ]]; then
-          echo "Development release..."
+          echo "Core Dev (GCP) release..."
           BRANCH=develop
           git checkout $BRANCH
+          cd env/core-dev
+          update_image_and_push
+          cd ../../  # return to root directory
+          
+          echo "Development (AWS) release..."
           cd env/development
         
         # staging release
         elif [[ ${{ inputs.type }} == "staging" ]]; then
-          echo "Development release..."
+          echo "Core Dev (GCP) release..."
           BRANCH=develop
           git checkout $BRANCH
+          cd env/core-dev
+          update_image_and_push
+          cd ../../  # return to root directory
+
+          echo "Development release..."
           cd env/development
           update_image_and_push
           cd ../../  # return to root directory
