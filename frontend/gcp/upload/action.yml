@@ -2,6 +2,10 @@ name: Upload to Google Cloud Storage
 description: Uploads files/folders to a Google Cloud Storage bucket
 
 inputs:
+  gcp-load-balancer:
+    description: 'The name of the load balancer to invalidate the cache'
+    required: false
+
   gcp-parent:
     description: 'Whether the parent directory should be included in GCS destination path'
     default: true
@@ -82,6 +86,13 @@ runs:
         destination: ${{ inputs.gcp-upload-to-path }}
         parent: ${{ inputs.gcp-parent }}
         path: ${{ inputs.gcp-upload-from-path }}
+
+    - name: Invalidate the load balancer's cache
+      if: ${{ inputs.gcp-load-balancer != '' }}
+      uses: stefanodotit/github-actions-invalidate-gcp-cdn@v1
+      with:
+        load_balancer_name: ${{ inputs.gcp-load-balancer }}
+        path: '/*'
 
     - if: ${{ inputs.notify-slack-on-failure == 'true' && failure() }}
       name: Notify Slack
