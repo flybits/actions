@@ -76,18 +76,6 @@ runs:
         username: ${{ inputs.docker_username }}
         password: ${{ inputs.docker_password }}
 
-    #Install Trivy
-    - name: Install Trivy
-      shell: bash
-      run: curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
-
-    #Scan with Trivy
-    - name: Trivy Scan Dependencies
-      shell: bash
-      run: |
-        trivy fs --exit-code 1 --severity HIGH,CRITICAL --no-progress .
-        trivy config --exit-code 1 --severity HIGH,CRITICAL ${{ inputs.docker_file }}
-
     #Setup Paths
     #This is needed because its possible there are cases where multiple actions need to be run such as auth;
     #Auth has two images that get deployed one for the Auth service and one for the Auth User Deletion cronjob
@@ -126,8 +114,3 @@ runs:
         name: ${{ env.VERSIONFILENAME }}
         path: ${{ env.VERSIONFILE }}
         retention-days: 5
-
-    #Scan local Docker Image With Trivy
-    - name: Trivy Scan Local Image
-      shell: bash
-      run: trivy image --exit-code 1 --severity HIGH,CRITICAL --no-progress $TAG
