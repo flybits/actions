@@ -1,0 +1,56 @@
+name: 'Notify Slack'
+description: 'Publishes a message to Slack when the job either succeeds or fails'
+
+inputs:
+  bot-token:
+    description: 'The bot token to use for posting to Slack'
+    required: true
+
+  channel-id:
+    description: 'The Slack channel to post the message to'
+    default: 'C9YA9JUKG'
+    required: false
+
+  environment:
+    description: 'The name of the environment'
+    default: 'Not Specified'
+    required: false
+
+  message:
+    description: 'The message to post to Slack'
+    default: '${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}'
+    required: false
+
+  update-ts:
+    description: 'The timestamp of the Slack message to update'
+    required: false
+
+  thread-ts:
+    description: 'The timestamp of the parent message to reply to'
+    required: false
+
+  web-app-name:
+    description: 'The name of web application'
+    default: '${{ github.event.repository.name }}'
+    required: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate inputs
+      shell: bash
+      run: |
+        [[ "${{ inputs.bot-token }}" ]] || { echo "bot-token input is empty"; exit 1; }
+
+    - name: Notify Slack
+      uses: 'slackapi/slack-github-action@v1.26.0'
+      env:
+        SLACK_BOT_TOKEN: ${{ inputs.bot-token }}
+      with:
+        channel-id: ${{ inputs.channel-id }}
+        update-ts: ${{ inputs.update-ts }}
+        payload: |
+          {
+            "text": "<${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}|${{ inputs.message }}>",
+            "thread_ts": "${{ inputs.thread-ts }}"
+          }
