@@ -1,5 +1,5 @@
-name: Notify Slack
-description: Publishes a message to Slack when a job fails
+name: 'Notify Slack'
+description: 'Publishes a message to Slack when a job fails'
 
 inputs:
   bot-token:

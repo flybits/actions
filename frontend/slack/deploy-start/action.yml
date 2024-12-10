@@ -1,5 +1,5 @@
-name: Notify Slack
-description: Publishes a message to Slack when a deploy workflow starts
+name: 'Notify Slack'
+description: 'Publishes a message to Slack when a deploy workflow starts'
 
 inputs:
   bot-token:
@@ -55,7 +55,7 @@ runs:
                   },
                   {
                     "type": "mrkdwn",
-                    "text": "Deploying <${{ github.event.repository.html_url }}|${{ inputs.web-app-name }}> to *${{ inputs.environment }}*! 🤩"
+                    "text": "Deploying <${{ github.event.repository.html_url }}|${{ inputs.web-app-name }}> to `${{ inputs.environment }}`! 🤩"
                   }
                 ]
               },

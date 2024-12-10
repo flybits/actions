@@ -1,5 +1,5 @@
-name: Notify Slack
-description: Publishes a message to Slack after successful deployment
+name: 'Notify Slack'
+description: 'Publishes a message to Slack after successful deployment'
 
 inputs:
   bot-token:
