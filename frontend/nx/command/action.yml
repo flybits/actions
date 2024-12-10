@@ -1,0 +1,92 @@
+name: 'NX Command'
+description: 'Executes a specified command using NX, with optional Slack notifications for success or failure'
+
+inputs:
+  command:
+    description: 'A command to execute'
+    required: true
+
+  github-personal-access-token:
+    description: 'GitHub personal access token for accessing private NPM packages'
+    default: ${{ github.token }}
+    required: false
+
+  slack-failure-message:
+    description: 'Message to send to Slack if the command fails'
+    default: 'Nx command failed'
+    required: false
+
+  slack-notify-on-failure:
+    description: 'Notify a Slack channel if the command fails'
+    default: true
+    required: false
+
+  slack-notify-on-success:
+    description: 'Notify a Slack channel if the command succeeds'
+    default: false
+    required: false
+
+  slack-success-message:
+    description: 'Message to send to Slack if the command succeeds'
+    default: 'Nx command succeeded'
+    required: false
+
+  slack-bot-token:
+    description: 'Bot token for sending messages to Slack'
+    required: false
+
+  slack-thread-ts:
+    description: 'Timestamp of the Slack thread message'
+    required: false
+
+  web-app-name:
+    description: 'Human-readable name of the web application'
+    default: ${{ github.event.repository.name }}
+    required: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate inputs
+      shell: bash
+      run: |
+        [[ "${{ inputs.command }}" ]] || { echo "'command' input is empty"; exit 1; }
+
+        if [[ "${{ inputs.slack-notify-on-failure }}" == 'true' && ! "${{ inputs.slack-bot-token }}" ]]; then
+          echo "'slack-bot-token' input is required when 'slack-notify-on-failure' is true"
+          exit 1
+        fi
+
+        if [[ "${{ inputs.slack-notify-on-success }}" == 'true' && ! "${{ inputs.slack-bot-token }}" ]]; then
+          echo "'slack-bot-token' input is required when 'slack-notify-on-success' is true"
+          exit 1
+        fi
+
+    - name: Install Node and NPM packages
+      uses: flybits/frontend-github-actions/node-npm/install@main
+      with:
+        github-personal-access-token: ${{ inputs.github-personal-access-token }}
+        slack-bot-token: ${{ inputs.slack-bot-token }}
+        thread-ts: ${{ inputs.slack-thread-ts }}
+
+    - name: Run command
+      shell: bash
+      run: npx nx ${{ inputs.command }}
+
+    - if: ${{ inputs.slack-notify-on-failure == 'true' && failure() }}
+      name: Send failure message to Slack
+      uses: flybits/frontend-github-actions/slack/job-message@main
+      with:
+        bot-token: ${{ inputs.slack-bot-token }}
+        message: ${{ inputs.slack-failure-message}}
+        thread-ts: ${{ inputs.slack-thread-ts }}
+        web-app-name: ${{ inputs.web-app-name }}
+
+    - if: ${{ inputs.slack-notify-on-success == 'true' && success() }}
+      name: Send success message to Slack
+      uses: flybits/frontend-github-actions/slack/job-message@main
+      with:
+        bot-token: ${{ inputs.slack-bot-token }}
+        message: ${{ inputs.slack-success-message}}
+        thread-ts: ${{ inputs.slack-thread-ts }}
+        web-app-name: ${{ inputs.web-app-name }}
