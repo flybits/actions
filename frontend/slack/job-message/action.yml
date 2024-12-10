@@ -43,7 +43,7 @@ runs:
         [[ "${{ inputs.bot-token }}" ]] || { echo "bot-token input is empty"; exit 1; }
 
     - name: Notify Slack
-      uses: 'slackapi/slack-github-action@v1.26.0'
+      uses: 'slackapi/slack-github-action@v2.0.0'
       env:
         SLACK_BOT_TOKEN: ${{ inputs.bot-token }}
       with:
