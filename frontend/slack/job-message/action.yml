@@ -1,5 +1,5 @@
 name: 'Notify Slack'
-description: 'Publishes a message to Slack when a job fails'
+description: 'Publishes a message to Slack when the job either succeeds or fails'
 
 inputs:
   bot-token:
@@ -11,14 +11,14 @@ inputs:
     default: 'C9YA9JUKG'
     required: false
 
-  environment:
+  environment-name:
     description: 'The name of the environment'
     default: 'Not Specified'
     required: false
 
   message:
     description: 'The message to post to Slack'
-    default: '☠️ Job failed'
+    default: '${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}'
     required: false
 
   update-ts:
@@ -30,14 +30,14 @@ inputs:
     required: false
 
   web-app-name:
-    description: 'The name of your web application'
-    default: ${{ github.event.repository.name }}
+    description: 'The name of web application'
+    default: '${{ github.event.repository.name }}'
     required: false
 
 runs:
   using: 'composite'
   steps:
-    - name: Validate Github Actions' inputs
+    - name: Validate inputs
       shell: bash
       run: |
         [[ "${{ inputs.bot-token }}" ]] || { echo "bot-token input is empty"; exit 1; }
@@ -51,6 +51,6 @@ runs:
         update-ts: ${{ inputs.update-ts }}
         payload: |
           {
-            "thread_ts": "${{ inputs.thread-ts }}",
-            "text": "<${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}|${{ inputs.message }}>"
+            "text": "<${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}|${{ inputs.message }}>",
+            "thread_ts": "${{ inputs.thread-ts }}"
           }
