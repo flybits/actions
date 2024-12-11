@@ -17,8 +17,7 @@ This action executes a specified command using Nx.
 #### Inputs:
 
 ```yaml
-- name: Run lint
-  uses: flybits/frontend-github-actions/nx/command@main
+- uses: flybits/actions/frontend/nx/command@main
   with:
     # A command to execute
     # Required

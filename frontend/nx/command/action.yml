@@ -63,7 +63,7 @@ runs:
         fi
 
     - name: Install Node and NPM packages
-      uses: flybits/frontend-github-actions/node-npm/install@main
+      uses: flybits/actions/frontend/node-npm/install@main
       with:
         github-personal-access-token: ${{ inputs.github-personal-access-token }}
         slack-bot-token: ${{ inputs.slack-bot-token }}
@@ -75,7 +75,7 @@ runs:
 
     - if: ${{ inputs.slack-notify-on-failure == 'true' && failure() }}
       name: Send failure message to Slack
-      uses: flybits/frontend-github-actions/slack/job-message@main
+      uses: flybits/actions/frontend/slack/job-message@main
       with:
         bot-token: ${{ inputs.slack-bot-token }}
         message: ${{ inputs.slack-failure-message}}
@@ -84,7 +84,7 @@ runs:
 
     - if: ${{ inputs.slack-notify-on-success == 'true' && success() }}
       name: Send success message to Slack
-      uses: flybits/frontend-github-actions/slack/job-message@main
+      uses: flybits/actions/frontend/slack/job-message@main
       with:
         bot-token: ${{ inputs.slack-bot-token }}
         message: ${{ inputs.slack-success-message}}
