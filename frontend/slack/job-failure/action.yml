@@ -44,13 +44,11 @@ runs:
 
     - name: Notify Slack
       uses: 'slackapi/slack-github-action@v2.0.0'
-      env:
-        SLACK_BOT_TOKEN: ${{ inputs.bot-token }}
       with:
-        channel-id: ${{ inputs.channel-id }}
-        update-ts: ${{ inputs.update-ts }}
+        errors: true
+        method: 'chat.postMessage'
         payload: |
-          {
-            "thread_ts": "${{ inputs.thread-ts }}",
-            "text": "<${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}|${{ inputs.message }}>"
-          }
+          channel: ${{ inputs.channel-id }}
+          text: "<${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}|${{ inputs.message }}>",
+          thread_ts: "${{ inputs.thread-ts }}"
+        token: ${{ inputs.bot-token }}
