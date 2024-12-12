@@ -34,33 +34,29 @@ runs:
         [[ "${{ inputs.bot-token }}" ]] || { echo "bot-token input is empty"; exit 1; }
 
     - name: Notify Slack
-      uses: slackapi/slack-github-action@v2.0.0
-      env:
-        SLACK_BOT_TOKEN: ${{ inputs.bot-token }}
+      uses: 'slackapi/slack-github-action@v2.0.0'
       with:
-        channel-id: ${{ inputs.channel-id }}
-        update-ts: ${{ inputs.update-ts }}
+        errors: true
+        method: 'chat.update'
         payload: |
-          {
-            "attachments": [
-              {
-                "title": "Successfully deployed the web application on *${{ inputs.environment }}*!",
-                "title_link": "${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}",
-                "color": "06B200",
-                "fields": [
-                  {
-                    "title": "Web Application",
-                    "short": true,
-                    "value": "${{ inputs.web-app-name }}"
-                  },
-                  {
-                    "title": "Status",
-                    "short": true,
-                    "value": ":badge-success: Deployed"
-                  }
-                ],
-                "footer_icon": "https://github.com/${{ github.triggering_actor }}.png",
-                "footer": "Triggered by ${{ github.triggering_actor }}"
-              }
-            ]
-          }
+          channel: ${{ inputs.channel-id }}
+          text: "*Deployment succeeded!* :rocket: :approved:"
+          attachments:
+            - color: "#06B200"
+              fields:
+                - title: "Web Application"
+                  short: true
+                  value: "<${{ github.event.repository.html_url }}|${{ inputs.web-app-name }}>"
+                - title: "Environment"
+                  short: true
+                  value: "${{ inputs.environment }}"
+                - title: "Branch"
+                  short: true
+                  value: "`${{ github.ref_name }}`"
+                - title: "Status"
+                  short: true
+                  value: ":badge-success: <${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}|Deployed>"
+              footer_icon: "https://github.com/${{ github.triggering_actor }}.png"
+              footer: "This deployment was triggered by ${{ github.triggering_actor }}"
+          ts: "${{ inputs.update-ts }}"
+        token: ${{ inputs.bot-token }}
