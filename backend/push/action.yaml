@@ -134,7 +134,7 @@ runs:
 
             git commit -am "Auto-release $TAG"
 
-            //Max re-tries is 3
+            #Max re-tries is 3
             for i in {1..4}; do
               if git push origin $BRANCH || try_commit_push; then
                 echo "Upload Success"
