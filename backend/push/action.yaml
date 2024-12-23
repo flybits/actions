@@ -136,14 +136,13 @@ runs:
 
             //Max re-tries is 3
             for i in {1..4}; do
-              if git push origin $BRANCH || try_commit_push
-              then
+              if git push origin $BRANCH || try_commit_push; then
                 echo "Upload Success"
                 break
               else
                 echo "Upload failed, retrying attempt $i in 10 seconds... "
                 sleep 10
-              done
+              fi
             done
           }
 
