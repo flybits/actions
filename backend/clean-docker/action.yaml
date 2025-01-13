@@ -75,10 +75,11 @@ runs:
           for TAG in $TAGS_TO_DELETE; do
             echo "Deleting tag: $TAG"
 
-              response=$(curl -s -X DELETE -w "%{http_code}" -H "Authorization: JWT $DOCKER_TOKEN" "https://hub.docker.com/v2/repositories/$REPO/tags/$TAG")
+              response=$(curl -s -X DELETE -o response.txt -w "%{http_code}" -H "Authorization: JWT $DOCKER_TOKEN" "https://hub.docker.com/v2/repositories/$REPO/tags/$TAG")
               http_code="${response: -3}"
               if [[ $http_code -ne 204 ]]; then
-                echo "Deleting $TAG Request failed..."
+                response_body=$(<response.txt)
+                echo "Deleting $TAG Request failed ... $response_body"
                 break
               fi
           done
