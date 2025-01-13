@@ -30,14 +30,13 @@ runs:
         username: ${{ inputs.docker_username }}
         password: ${{ inputs.docker_password }}
 
-    - name: Authenticate with Docker Hub
+    - name: Retrieving Docker JWT
       shell: bash
       run: |
         echo "Authenticating with Docker Hub..."
         # Decode the Docker config to extract the token
         TOKEN=$(jq -r '.auths["https://index.docker.io/v1/"].auth' ~/.docker/config.json | base64 -d | cut -d':' -f2)
         echo "DOCKER_TOKEN=${TOKEN}" >> $GITHUB_ENV
-        
 
     - name: Cleanup Repository Images
       shell: bash
@@ -58,14 +57,16 @@ runs:
           echo "Fetching page $CURRENT_PAGE for tags in $REPO - $url"
 
           response=$(curl -s -H "Authorization: JWT $DOCKER_TOKEN" -o response.txt -w "%{http_code}" "$url")
-          # Split the status code and response
+          
+          # Split the status code and response if status code is not 200 exit ungracefully
           http_code="${response: -3}"
           response_body=$(<response.txt)
           if [[ $http_code -ne 200 ]]; then
-            echo "Request failed..."
+            echo "Request failed - $response_body ..."
             exit 1
           fi
 
+          # Get all image tags that end with .dev
           TAGS=$(echo "$response_body" | jq -r '.results[] | select(.name | endswith(".dev")) | .name')
           if [[ -z "$TAGS" ]]; then
             echo "No Tags found."
