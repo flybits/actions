@@ -22,7 +22,6 @@ runs:
     - name: Install Dependencies
       shell: bash
       run: |
-        sudo apt-get update
         sudo apt-get install -y jq
 
     - name: Authenticate with Docker Hub
@@ -48,7 +47,7 @@ runs:
           echo "Fetching page $CURRENT_PAGE for tags in ${{ inputs.docker_repo }}..."
           
           # Fetch all tags for the repository
-          url="https://hub.docker.com/v2/repositories/flybits/${{ inputs.docker_repo }}/tags?page=$CURRENT_PAGE&page_size=100"
+          url="https://hub.docker.com/v2/repositories/${{ inputs.docker_repo }}/tags?page=$CURRENT_PAGE&page_size=100"
           echo "Url is: $url"
 
           response=$(curl -s -H "Authorization: JWT $DOCKER_TOKEN" "$url")
@@ -60,7 +59,7 @@ runs:
               break
           fi
            
-          # TAGS=$(curl -s -H "Authorization: JWT $DOCKER_TOKEN" "https://hub.docker.com/v2/repositories/flybits/${{ inputs.docker_repo }}/tags?page=$CURRENT_PAGE&page_size=100" | jq -r '.results[] | select(.name | endswith(".dev")) | .name' | sort -r)
+          # TAGS=$(curl -s -H "Authorization: JWT $DOCKER_TOKEN" "https://hub.docker.com/v2/repositories/${{ inputs.docker_repo }}/tags?page=$CURRENT_PAGE&page_size=100" | jq -r '.results[] | select(.name | endswith(".dev")) | .name' | sort -r)
 
           if [[ "$next" == "null" ]]; then
             echo "Exiting paging loop for ${{ inputs.docker_repo }}..."
@@ -76,7 +75,7 @@ runs:
           for TAG in $TAGS_TO_DELETE; do
             echo "Deleting tag: $TAG"
 
-              #curl -s -X DELETE -H "Authorization: JWT $DOCKER_TOKEN" "https://hub.docker.com/v2/repositories/flybits/${{ inputs.docker_repo }}/tags/$TAG"
+              #curl -s -X DELETE -H "Authorization: JWT $DOCKER_TOKEN" "https://hub.docker.com/v2/repositories/${{ inputs.docker_repo }}/tags/$TAG"
               echo "Deleted tag: $TAG"
           done
         done
