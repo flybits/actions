@@ -46,18 +46,15 @@ runs:
         CURRENT_PAGE=1
 
         while true; do
-          echo "Fetching page $CURRENT_PAGE for tags in $REPO..."
           
           # Fetch all tags for the repository
           url="https://hub.docker.com/v2/repositories/$REPO/tags?page=$CURRENT_PAGE&page_size=100"
-          echo "Url is: $url"
+         echo "Fetching page $CURRENT_PAGE for tags in $REPO - $url"
 
           response=$(curl -s -H "Authorization: JWT $DOCKER_TOKEN" -o response.txt -w "%{http_code}" "$url")
           # Split the status code and response
           http_code="${response: -3}"
-          echo "The response Code is: $http_code"
           response_body=$(<response.txt)
-          echo "The response is: $response_body"
           if [[ $http_code -ne 200 ]]; then
             echo "Request failed..."
             break
@@ -78,8 +75,12 @@ runs:
           for TAG in $TAGS_TO_DELETE; do
             echo "Deleting tag: $TAG"
 
-              # curl -s -X DELETE -H "Authorization: JWT $DOCKER_TOKEN" "https://hub.docker.com/v2/repositories/$REPO/tags/$TAG"
-              echo "Deleted tag: $TAG"
+              response=$(curl -s -X DELETE -w "%{http_code}" -H "Authorization: JWT $DOCKER_TOKEN" "https://hub.docker.com/v2/repositories/$REPO/tags/$TAG")
+              http_code="${response: -3}"
+              if [[ $http_code -ne 204 ]]; then
+                echo "Deleting $TAG Request failed..."
+                break
+              fi
           done
 
           if [[ "$next" == "null" ]]; then
