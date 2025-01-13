@@ -60,7 +60,7 @@ runs:
             exit 1
           fi
 
-          TAGS=$(echo "$response_body" | jq -r '.results[] | select(.name | endswith(".dev")) | .name' | sort -r)
+          TAGS=$(echo "$response_body" | jq -r '.results[] | select(.name | endswith(".dev")) | .name')
           if [[ -z "$TAGS" ]]; then
               echo "No Tags found."
               exit 1
