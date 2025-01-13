@@ -30,7 +30,7 @@ runs:
         echo "Authenticating with Docker Hub..."
         response=$(curl -s -X POST -H "Content-Type: application/json" -d "{\"username\":\"${{ inputs.docker_username }}\",\"password\":\"${{ inputs.docker_password }}\"}" "https://hub.docker.com/v2/users/login/")
         echo "Authentication Response: $response"
-        TOKEN=$("$response" | jq -r '.token')
+        TOKEN=$(echo "$response" | jq -r '.token')
         echo "DOCKER_TOKEN=$TOKEN" >> $GITHUB_ENV
 
     - name: Cleanup Repository Images
