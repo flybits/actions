@@ -36,7 +36,7 @@ runs:
         echo "Username: ${{ inputs.docker_username }}"
         username=${{ inputs.docker_username }}
         echo "Password: [REDACTED]"  # Do not echo secrets directly!
-        echo "Token length: ${#DOCKER_TOKEN}"  # Check token is being set
+        echo "Token length: ${#TOKEN}"  # Check token is being set
         echo "Username length: ${#username}"  # Check token is being set
 
     - name: Cleanup Repository Images
