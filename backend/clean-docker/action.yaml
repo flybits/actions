@@ -33,8 +33,8 @@ runs:
         TOKEN=$(echo "$response" | jq -r '.token')
         echo "DOCKER_TOKEN=$TOKEN" >> $GITHUB_ENV
 
-        echo "Username: ${{ secrets.docker_username }}"
-        username=${{ secrets.docker_username }}
+        echo "Username: ${{ inputs.docker_username }}"
+        username=${{ inputs.docker_username }}
         echo "Password: [REDACTED]"  # Do not echo secrets directly!
         echo "Token length: ${#DOCKER_TOKEN}"  # Check token is being set
         echo "Username length: ${#username}"  # Check token is being set
