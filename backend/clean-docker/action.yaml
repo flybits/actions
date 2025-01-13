@@ -33,6 +33,12 @@ runs:
         TOKEN=$(echo "$response" | jq -r '.token')
         echo "DOCKER_TOKEN=$TOKEN" >> $GITHUB_ENV
 
+        # Extract and decode the payload
+        PAYLOAD=$(echo "$DOCKER_TOKEN" | cut -d '.' -f2 | base64 -d 2>/dev/null)
+
+        # Print the payload
+        echo "$PAYLOAD"
+
     - name: Cleanup Repository Images
       shell: bash
       env:
