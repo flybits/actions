@@ -72,10 +72,19 @@ runs:
           fi
 
           # Get all image tags that end with .dev
-          TAGS=$(echo "$response_body" | jq -r '.results[] | select(.name | endswith(".dev")) | .name')
-           
-          # Get tags to delete (skip the first N tags)
-          TAGS_TO_DELETE=$(echo "$TAGS" | tail -n +$((KEEP_LATEST + 1)))
+          TAGS_DEV=$(echo "$response_body" | jq -r '.results[] | select(.name | endswith(".dev")) | .name')
+
+          # Get all image tags that match the staging regex
+          TAGS_STAGING=$(echo "$response_body" | jq -r '.results[] | select(.name | test("-ecdf6e4$")) | .name')
+
+          # Get tags to delete from TAGS_DEV (skip the first N tags)
+          TAGS_DEV_TO_DELETE=$(echo "$TAGS_DEV" | tail -n +$((KEEP_LATEST + 1)))
+
+          # Get tags to delete from TAGS_STAGING (skip the first N tags)
+          TAGS_STAGING_TO_DELETE=$(echo "$TAGS_STAGING" | tail -n +$((KEEP_LATEST + 1)))
+
+          # Combine the tags to delete from both lists
+          TAGS_TO_DELETE=$(echo -e "$TAGS_DEV_TO_DELETE\n$TAGS_STAGING_TO_DELETE")
 
           # Loop through tags to delete
           for TAG in $TAGS_TO_DELETE; do
