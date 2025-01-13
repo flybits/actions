@@ -76,6 +76,7 @@ runs:
 
           # Get all image tags that match the staging regex
           TAGS_STAGING=$(echo "$response_body" | jq -r '.results[] | select(.name | test("-ecdf6e4$")) | .name')
+          echo "TAGS STAGING TO DELETE: $TAGS_STAGING"
 
           # Get tags to delete from TAGS_DEV (skip the first N tags)
           TAGS_DEV_TO_DELETE=$(echo "$TAGS_DEV" | tail -n +$((KEEP_LATEST + 1)))
