@@ -61,6 +61,11 @@ runs:
           # Split the status code and response if status code is not 200 exit ungracefully
           http_code="${response: -3}"
           response_body=$(<response.txt)
+          if [[ $http_code -eq 404 ]]; then
+            echo "Could not find object so most likely we have reached the end - $response_body ..."
+            break
+          fi
+
           if [[ $http_code -ne 200 ]]; then
             echo "Request failed - $response_body ..."
             exit 1
