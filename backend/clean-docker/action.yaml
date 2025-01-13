@@ -33,11 +33,11 @@ runs:
         TOKEN=$(echo "$response" | jq -r '.token')
         echo "DOCKER_TOKEN=$TOKEN" >> $GITHUB_ENV
 
-        # Extract and decode the payload
-        PAYLOAD=$(echo "$DOCKER_TOKEN" | cut -d '.' -f2 | base64 -d 2>/dev/null)
-
-        # Print the payload
-        echo "Payload is: $PAYLOAD"
+        echo "Username: ${{ secrets.docker_username }}"
+        username=${{ secrets.docker_username }}
+        echo "Password: [REDACTED]"  # Do not echo secrets directly!
+        echo "Token length: ${#DOCKER_TOKEN}"  # Check token is being set
+        echo "Username length: ${#username}"  # Check token is being set
 
     - name: Cleanup Repository Images
       shell: bash
