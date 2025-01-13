@@ -52,23 +52,24 @@ runs:
           url="https://hub.docker.com/v2/repositories/$REPO/tags?page=$CURRENT_PAGE&page_size=100"
           echo "Url is: $url"
 
-          response=$(curl -s -H "Authorization: JWT $DOCKER_TOKEN" "$url")
-          echo "The response is: $response"
+          response=$(curl -s -H "Authorization: JWT $DOCKER_TOKEN" -o response.txt -w "%{http_code}" "$url")
+          # Split the status code and response
+          http_code="${response: -3}"
+          echo "The response Code is: $http_code"
+          response_body=$(<response.txt)
+          echo "The response is: $response_body"
+          if [[ $http_code -ne 200 ]]; then
+            echo "Request failed..."
+            break
+          fi
 
-          TAGS=$(echo "$response" | jq -r '.results[] | select(.name | endswith(".dev")) | .name' | sort -r)
+          TAGS=$(echo "$response_body" | jq -r '.results[] | select(.name | endswith(".dev")) | .name' | sort -r)
           if [[ -z "$TAGS" ]]; then
               echo "No Tags found."
               break
           fi
            
           # TAGS=$(curl -s -H "Authorization: JWT $DOCKER_TOKEN" "https://hub.docker.com/v2/repositories/$REPO/tags?page=$CURRENT_PAGE&page_size=100" | jq -r '.results[] | select(.name | endswith(".dev")) | .name' | sort -r)
-
-          if [[ "$next" == "null" ]]; then
-            echo "Exiting paging loop for $REPO..."
-            break
-          fi
-
-          ((CURRENT_PAGE++))
 
           # Get tags to delete (skip the first N tags)
           TAGS_TO_DELETE=$(echo "$TAGS" | tail -n +$((KEEP_LATEST + 1)))
@@ -81,6 +82,12 @@ runs:
               echo "Deleted tag: $TAG"
           done
 
+          if [[ "$next" == "null" ]]; then
+            echo "Exiting paging loop for $REPO..."
+            break
+          fi
+
+          ((CURRENT_PAGE++))
         done
 
         echo "Cleanup completed for repository: $REPO"
