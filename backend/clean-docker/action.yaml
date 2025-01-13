@@ -96,6 +96,7 @@ runs:
             break
           fi
 
+          KEEP_LATEST=0
           ((CURRENT_PAGE++))
         done
 
