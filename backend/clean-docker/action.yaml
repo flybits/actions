@@ -28,7 +28,7 @@ runs:
       shell: bash
       run: |
         echo "Authenticating with Docker Hub..."
-        TOKEN=$(curl -s -u "${{ inputs.docker_username }}:${{ inputs.docker_password }}" "https://hub.docker.com/v2/users/login/" | jq -r '.token')
+        TOKEN=$(curl -s -X POST -u "${{ inputs.docker_username }}:${{ inputs.docker_password }}" "https://hub.docker.com/v2/users/login/" | jq -r '.token')
         echo "DOCKER_TOKEN=$TOKEN" >> $GITHUB_ENV
 
     - name: Cleanup Repository Images
