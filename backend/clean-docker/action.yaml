@@ -68,10 +68,6 @@ runs:
 
           # Get all image tags that end with .dev
           TAGS=$(echo "$response_body" | jq -r '.results[] | select(.name | endswith(".dev")) | .name')
-          if [[ -z "$TAGS" ]]; then
-            echo "No Tags found."
-            exit 1
-          fi
            
           # Get tags to delete (skip the first N tags)
           TAGS_TO_DELETE=$(echo "$TAGS" | tail -n +$((KEEP_LATEST + 1)))
