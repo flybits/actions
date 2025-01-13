@@ -1,0 +1,69 @@
+name: Build Docker Image
+author: Petar Kramaric
+description: GitHub action for deleting docker hub images
+inputs:
+  docker_username:
+    description: A username of the docker registry
+    required: true
+  docker_password:
+    description: The password associated to the docker registry user
+    required: true
+  docker_repo:
+    description: The repository where the docker image should be saved. Format is {organization}/{repository}
+    required: true
+  keep_latest:
+    description: Keep the latest number of .dev images (how many should not be deleted)
+    required: true
+    default: 10
+
+runs:
+  using: "composite"
+  steps:
+    - name: Install Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+    - name: Authenticate with Docker Hub
+        run: |
+          echo "Authenticating with Docker Hub..."
+          TOKEN=$(curl -s -u "${{ inputs.docker_username }}:${{ inputs.docker_password }}" "https://hub.docker.com/v2/users/login/" | jq -r '.token')
+          echo "DOCKER_TOKEN=$TOKEN" >> $GITHUB_ENV
+
+    - name: Cleanup Repository Images
+        env:
+          DOCKER_TOKEN: ${{ env.DOCKER_TOKEN }}
+        run: |
+          # Inputs
+          REPO="${{ inputs.repository }}"
+          KEEP_LATEST="${{ inputs.keep_latest }}"
+
+          echo "Cleaning up images for repository: ${{ inputs.docker_repo }}"
+          CURRENT_PAGE=1
+
+          while true; do
+            echo "Fetching page $CURRENT_PAGE for tags in ${{ inputs.docker_repo }}..."
+            
+            # Fetch all tags for the repository
+            TAGS=$(curl -s -H "Authorization: JWT $DOCKER_TOKEN" "https://hub.docker.com/v2/repositories/flybits/${{ inputs.docker_repo }}/tags?page=$CURRENT_PAGE&page_size=100" | jq -r '.results[] | select(.name | endswith(".dev")) | .name' | sort -r)
+
+            if [[ "$next" == "null" ]]; then
+              echo "Exiting paging loop for ${{ inputs.docker_repo }}..."
+              break
+            fi
+
+            ((CURRENT_PAGE++))
+
+            # Get tags to delete (skip the first N tags)
+            TAGS_TO_DELETE=$(echo "$TAGS" | tail -n +$((KEEP_LATEST + 1)))
+
+            # Loop through tags to delete
+            for TAG in $TAGS_TO_DELETE; do
+              echo "Deleting tag: $TAG"
+
+                #curl -s -X DELETE -H "Authorization: JWT $DOCKER_TOKEN" "https://hub.docker.com/v2/repositories/flybits/${{ inputs.docker_repo }}/tags/$TAG"
+                echo "Deleted tag: $TAG"
+            done
+          done
+
+          echo "Cleanup completed for repository: $REPO"
