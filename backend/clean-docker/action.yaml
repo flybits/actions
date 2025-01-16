@@ -1,4 +1,4 @@
-name: Build Docker Image
+name: Cleanup Docker Images
 author: Petar Kramaric
 description: GitHub action for deleting docker hub images
 inputs:
