@@ -118,6 +118,7 @@ runs:
           fi
 
           #Update pages and set KEEP_LATEST to 0 as for pages > 1 we do not want to keep any values
+          # this is not an issue because it is unlikely that we will have 100 items (the first page) with no .dev images
           KEEP_LATEST=0
           ((CURRENT_PAGE++))
         done
