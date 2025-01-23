@@ -33,7 +33,7 @@ runs:
   steps:
 
     #Clean up docker images
-    - uses: ./../clean-docker@main
+    - uses: ./../clean-docker@ccd0f2e5baa732fcf0f94d8fa859e7acb85b222f
       id: docker_cleanup
       with:
         docker_username: ${{ inputs.docker_username }}
@@ -48,7 +48,7 @@ runs:
       shell: bash
       run: echo "SUCCESS=${{ steps.docker_cleanup.outcome == 'success' }}" >> $GITHUB_ENV
     
-    - uses: ./../go-vulncheck@6main
+    - uses: ./../go-vulncheck@ccd0f2e5baa732fcf0f94d8fa859e7acb85b222f
       if: always()  # Ensure this step runs even if the previous one failed
       with:
         slack_webhook_url: ${{ inputs.slack_webhook_url }}
