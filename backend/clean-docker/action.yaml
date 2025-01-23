@@ -24,7 +24,7 @@ runs:
       run: |
         sudo apt-get install -y jq
 
-    - name: Inputs validation
+    - name: Input Validation
       shell: bash
       run: |
         [[ "${{ inputs.keep_latest }}"  -ge 1 ]] || { echo "keep_latest must be at least 1" ; exit 1; }
