@@ -31,6 +31,10 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - uses: actions/checkout@v4
+      with:
+        ref: ${{inputs.branch}}
+
     #Clean up docker images
     - uses: ./backend/clean-docker
       id: docker_cleanup_success
