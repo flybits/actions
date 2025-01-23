@@ -33,7 +33,7 @@ runs:
   steps:
 
     #Clean up docker images
-    - uses: flybits/actions/backend/clean-docker@6e65b83c81904f40d7525528c5a44647dc9d241f
+    - uses: flybits/actions/backend/clean-docker@main
       id: docker_cleanup
       with:
         docker_username: ${{ inputs.docker_username }}
@@ -48,7 +48,7 @@ runs:
       shell: bash
       run: echo "SUCCESS=${{ steps.docker_cleanup.outcome == 'success' }}" >> $GITHUB_ENV
     
-    - uses: flybits/actions/backend/go-vulncheck@6e65b83c81904f40d7525528c5a44647dc9d241f
+    - uses: flybits/actions/backend/go-vulncheck@6main
       if: always()  # Ensure this step runs even if the previous one failed
       with:
         slack_webhook_url: ${{ inputs.slack_webhook_url }}
