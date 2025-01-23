@@ -1,0 +1,61 @@
+name: Nightly Jobs
+author: Petar Kramaric
+description: GitHub action for running nightly jobs
+inputs:
+  slack_webhook_url:
+    description: A Slack webhook url for alerting on failures
+    required: false
+  deployment_token:
+    description: A deployment token for github
+    required: true
+  branch:
+    description: The branch to run this job will run on
+    required: true
+  show_success_slack_msg:
+    description: indicates that all failures and successes should be displayed in slack, otherwise only failures will appear
+    required: true
+  docker_username:
+    description: A username of the docker registry
+    required: true
+  docker_password:
+    description: The password associated to the docker registry user
+    required: true
+  docker_repo:
+    description: The repository where the docker image should be saved. Format is {organization}/{repository}
+    required: true
+  keep_latest:
+    description: Keep the latest number of .dev images (how many should not be deleted)
+    required: true
+    default: 10
+
+runs:
+  using: "composite"
+  steps:
+    #Clean up docker images
+    - uses: ./backend/clean-docker
+      id: docker_cleanup_success
+      with:
+        docker_username: ${{ inputs.docker_username }}
+        docker_password : ${{ inputs.docker_password }}
+        docker_repo: ${{ inputs.docker_repo }}
+        keep_latest: ${{ inputs.keep_latest }}
+      continue-on-error: true
+
+    # Capture the outcome of the docker image step
+    - name: Capture step status
+      if: always()  # Ensure this step runs even if the previous one failed
+      run: echo "SUCCESS=${{ steps.docker_cleanup_success.outcome == 'success' }}" >> $GITHUB_ENV
+    
+    - uses: ./backend/go-vulncheck
+      if: always()  # Ensure this step runs even if the previous one failed
+      with:
+        slack_webhook_url: ${{ inputs.slack_webhook_url }}
+        deployment_token : ${{ inputs.deployment_token }}
+        branch: ${{ inputs.branch }}
+
+    # Fail the job if the docker image failed
+    - name: Fail job if Docker Image Cleanup failed
+      if: env.SUCCESS == 'false'
+      run: |
+        echo "Docker Cleanup failed, marking job as failed."
+        exit 1
