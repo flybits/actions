@@ -46,7 +46,7 @@ runs:
     - name: Capture step status
       if: always()  # Ensure this step runs even if the previous one failed
       shell: bash
-      run: echo "SUCCESS=${{ steps.docker_cleanup.outcome == 'success' }}" >> $GITHUB_ENV
+      run: echo "DOCKER_CLEANUP_SUCCESS=${{ steps.docker_cleanup.outcome == 'success' }}" >> $GITHUB_ENV
     
     - uses: flybits/actions/backend/go-vulncheck@main
       if: always()  # Ensure this step runs even if the previous one failed
