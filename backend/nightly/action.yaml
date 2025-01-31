@@ -57,7 +57,7 @@ runs:
 
     # Fail the job if the docker image failed
     - name: Fail job if Docker Image Cleanup failed
-      if: env.SUCCESS == 'false'
+      if: env.DOCKER_CLEANUP_SUCCESS == 'false'
       shell: bash
       run: |
         echo "Docker Cleanup failed, marking job as failed."
