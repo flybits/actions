@@ -1,14 +1,10 @@
 name: Verify pull request's title
-description: Enforces that the title of a pull request must include the Jira issue key
+description: Enforces that the title of a pull request must follow the Conventional Commits format
 
 inputs:
   github-personal-access-token:
     description: 'A token used for accessing private repository (created under Flybits Inc. organization)'
-    required: true
-
-  notify-slack-on-failure:
-    description: 'Whether to notify a Slack channel if the job fails'
-    default: false
+    default: ${{ github.token }}
     required: false
 
 runs:
@@ -19,19 +15,38 @@ runs:
       run: |
         [[ "${{ inputs.github-personal-access-token }}" ]] || { echo "github-personal-access-token input is empty"; exit 1; }
 
-    - name: Verify if the Jira issue key is present in the title
-      uses: flybits/action-pr-title@v1.3.0
-      with:
-        regex: '(\[|\{|\()?([a-zA-Z]{2,4})([- ])(\d+)(\]|\}|\))?.*'
-        prefix_case_sensitive: false
-        min_length: 8
-        github_token: ${{ inputs.github-personal-access-token }}
+    - name: Verify Conventional Commits' structure
+      shell: bash
+      run: |
+        echo
 
-    - if: ${{ inputs.notify-slack-on-failure == 'true' && failure() }}
-      name: Notify Slack
-      uses: flybits/frontend-github-actions/slack/job-failure@main
-      with:
-        bot-token: ${{ inputs.slack-bot-token }}
-        message: '😒 Pull request's title verification failed'
-        thread-ts: ${{ inputs.slack-ts }}
-        web-app-name: ${{ inputs.web-app-name }}
+        function validate() {
+          if [[ "$PR_TITLE" =~ $REGEX ]]; then
+            echo -e "\t✅ $MESSAGE"
+          else
+            echo -e "\t❌ $MESSAGE"
+            exit 1
+          fi
+        }
+
+        PR_TITLE="${{ github.event.pull_request.title }}"
+
+        MESSAGE='should start with a lowercase word, except "BREAKING"\n'
+        REGEX='^(BREAKING CHANGE|[a-z]+).*$'
+        validate
+
+        MESSAGE='should follow the Conventional Commit (https://www.conventionalcommits.org) format\n'
+        REGEX='^(BREAKING CHANGE|[a-z]+)(\(.+\))?!?: .+$'
+        validate
+
+        MESSAGE='should use one of the following types:\n\tBREAKING CHANGE, build, chore, ci, docs, feat, fix, perf, refactor, release, revert, style, test\n'
+        REGEX='^(BREAKING CHANGE|build|chore|ci|docs|feat|fix|perf|refactor|release|revert|style|test)'
+        validate
+
+        MESSAGE='should use one of the following scopes:\n\tanalytics, audit-history, content, content-manager, context-rule, deps, deps-dev, experience,\n\tfile-upload, flow-visualizer, location, location-management, maker-cheker, merchant-portal,\n\tnotifications, push, release, rule, rule-builder, schedule, security, security-alert,\n\tsmart-targeting, template-library, zones-and-modules\n'
+        REGEX='^([a-zA-Z ]+)(\((analytics|audit\-history|content|content\-manager|context\-rule|deps|deps\-dev|experience|file\-upload|flow\-visualizer|location|location\-management|maker\-cheker|merchant\-portal|notifications|push|release|rule|rule\-builder|schedule|security|security\-alert|smart\-targeting|template\-library|zones\-and\-modules).*\))?!?: .+$'
+        validate
+
+        MESSAGE='should use the pipe character with spaces before and after (" | ") to separate\n\tthe scope and Jira ticket number in the pull request title\n'
+        REGEX='^([a-zA-Z ]+)(\([a-zA-Z0-9 |-]+\))?!?: .+' # Need to refine this regex to make it more stricter
+        validate
