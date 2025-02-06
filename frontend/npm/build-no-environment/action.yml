@@ -1,0 +1,83 @@
+name: Build (No Environment)
+description: Runs build command
+
+inputs:
+  github-personal-access-token:
+    description: 'GitHub personal access token for accessing private NPM packages'
+    default: ${{ github.token }}
+    required: false
+
+  slack-failure-message:
+    description: 'Message to send to Slack if the command fails'
+    default: 'Nx command failed'
+    required: false
+
+  slack-notify-on-failure:
+    description: 'Notify a Slack channel if the command fails'
+    default: true
+    required: false
+
+  slack-notify-on-success:
+    description: 'Notify a Slack channel if the command succeeds'
+    default: false
+    required: false
+
+  slack-success-message:
+    description: 'Message to send to Slack if the command succeeds'
+    default: 'Nx command succeeded'
+    required: false
+
+  slack-bot-token:
+    description: 'Bot token for sending messages to Slack'
+    required: false
+
+  slack-thread-ts:
+    description: 'Timestamp of the Slack thread message'
+    required: false
+
+  web-app-name:
+    description: 'Human-readable name of the web application'
+    default: ${{ github.event.repository.name }}
+    required: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Checkout the repository
+      uses: actions/checkout@v4
+
+    - name: Install node
+      uses: actions/setup-node@v4
+      with:
+        cache: 'npm'
+        node-version: 18
+
+    - name: Generate .npmrc file
+      shell: bash
+      run: echo -e "@flybits:registry=https://npm.pkg.github.com\n//npm.pkg.github.com/:_authToken=${{ inputs.github-personal-access-token }}" >> .npmrc
+
+    - name: Download packages
+      shell: bash
+      run: npm ci
+
+    - name: Generate distribution files
+      shell: bash
+      run: npm run build
+
+    - if: ${{ inputs.slack-notify-on-failure == 'true' && failure() }}
+      name: Send failure message to Slack
+      uses: flybits/actions/frontend/slack/job-message@main
+      with:
+        bot-token: ${{ inputs.slack-bot-token }}
+        message: ${{ inputs.slack-failure-message}}
+        thread-ts: ${{ inputs.slack-thread-ts }}
+        web-app-name: ${{ inputs.web-app-name }}
+
+    - if: ${{ inputs.slack-notify-on-success == 'true' && success() }}
+      name: Send success message to Slack
+      uses: flybits/actions/frontend/slack/job-message@main
+      with:
+        bot-token: ${{ inputs.slack-bot-token }}
+        message: ${{ inputs.slack-success-message}}
+        thread-ts: ${{ inputs.slack-thread-ts }}
+        web-app-name: ${{ inputs.web-app-name }}
