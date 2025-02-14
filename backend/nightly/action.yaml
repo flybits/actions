@@ -33,7 +33,7 @@ runs:
   steps:
 
     #Clean up docker images
-    - uses: flybits/actions/backend/clean-docker@ddc0935963a5d120f1171e928b76398c157063e2
+    - uses: flybits/actions/backend/clean-docker@640def8e4c88b885e2f5b25389bf26b39f8bae2e
       id: docker_cleanup
       with:
         docker_username: ${{ inputs.docker_username }}
