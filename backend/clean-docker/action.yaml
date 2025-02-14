@@ -9,12 +9,12 @@ inputs:
     description: The password associated to the docker registry user
     required: true
   docker_repo:
-    description: The repository where the docker image should be saved. Format is {organization}/{repository}
+    description: The repository where the docker image should be saved. Format is {organization}/{repository}. Comma-separated for list of images to delete.
     required: true
   keep_latest:
     description: Keep the latest number of .dev images (how many should not be deleted)
     required: true
-    default: 10
+    default: 5
 
 runs:
   using: "composite"
@@ -48,79 +48,83 @@ runs:
         DOCKER_TOKEN: ${{ env.DOCKER_TOKEN }}
       run: |
         # Inputs
-        REPO="${{ inputs.docker_repo }}"
+        REPOS=(${${{ inputs.docker_repo }}}) # Split comma-separated string into an array
         KEEP_LATEST="${{ inputs.keep_latest }}"
 
-        echo "Cleaning up images for repository: $REPO"
-        CURRENT_PAGE=1
+        # Function to delete tags, handles errors
+        delete_tag() {
+          local TAG="$1"
+          local deleteUrl="https://hub.docker.com/v2/repositories/$REPO/tags/$TAG"
+          echo "Deleting tag: $TAG - $deleteUrl"
 
-        while true; do
-          
-          # Fetch all tags for the repository
-          url="https://hub.docker.com/v2/repositories/$REPO/tags?page=$CURRENT_PAGE&page_size=100"
-          echo "Fetching page $CURRENT_PAGE for tags in $REPO - $url"
+          response=$(curl -s -X DELETE -H "Authorization: Bearer $DOCKER_TOKEN" "$deleteUrl")
+          http_code=$(echo "$response" | head -n 1 | awk '{print $2}') # Extract HTTP code
 
-          # Get the response and the http code associated to the response
-          response=$(curl -s -H "Authorization: JWT $DOCKER_TOKEN" -o response.txt -w "%{http_code}" "$url")
-          
-          # Split the status code and response.
-          http_code="${response: -3}"
-          response_body=$(<response.txt)
-
-          # If status code is 404 it means we have reached the end of the list so we can exit the loop and the job will be completed
-          if [[ $http_code -eq 404 ]]; then
-            echo "Could not find object so most likely we have reached the end - $response_body ..."
-            break
-          fi
-
-          # If status code is not 200 exit ungracefully.
-          if [[ $http_code -ne 200 ]]; then
-            echo "Request failed - $response_body ..."
+          if [[ $http_code -ne 204 ]]; then
+            echo "Deleting $TAG Request failed $http_code ... $response"
             exit 1
           fi
+        }
 
-          # Get all image tags that end with .dev
-          TAGS_DEV=$(echo "$response_body" | jq -r '.results[] | select(.name | endswith(".dev")) | .name')
+        # Function to process tags for a given type (.dev or staging)
+        process_tags() {
+          local TAGS_JSON="$1"
+          local TAGS_TO_DELETE=$(echo "$TAGS_JSON" | jq -r '.results[] | .name' | sort | tail -n +$((KEEP_LATEST + 1))) # Sort before tail
 
-          # Get all image tags that match the staging regex
-          TAGS_STAGING=$(echo "$response_body" | jq -r '.results[] | select(.name | test("[a-f0-9]{7,10}$")) | .name')
-         
-          # Get tags to delete from TAGS_DEV (skip the first N tags)
-          TAGS_DEV_TO_DELETE=$(echo "$TAGS_DEV" | tail -n +$((KEEP_LATEST + 1)))
-
-          # Get tags to delete from TAGS_STAGING (skip the first N tags)
-          TAGS_STAGING_TO_DELETE=$(echo "$TAGS_STAGING" | tail -n +$((KEEP_LATEST + 1)))
-
-          # Combine the tags to delete from both lists
-          TAGS_TO_DELETE=$(echo -e "$TAGS_DEV_TO_DELETE\n$TAGS_STAGING_TO_DELETE")
-
-          # Loop through tags to delete
           for TAG in $TAGS_TO_DELETE; do
+            delete_tag "$TAG"
+          done
+        }
+
+        for REPO in "${REPOS[@]}"; do # Loop through each repository
+          echo "Cleaning up images for repository: $REPO"
+
+          CURRENT_PAGE=1
+          while true; do
             
-            deleteUrl=https://hub.docker.com/v2/repositories/$REPO/tags/$TAG
-            echo "Deleting tag: $TAG - $deleteUrl"
+            # Fetch all tags for the repository
+            url="https://hub.docker.com/v2/repositories/$REPO/tags?page=$CURRENT_PAGE&page_size=100"
+            echo "Fetching page $CURRENT_PAGE for tags in $REPO - $url"
+
+            # Get the response and the http code associated to the response
+            response=$(curl -s -H "Authorization: JWT $DOCKER_TOKEN" -o response.txt -w "%{http_code}" "$url")
             
-            response=$(curl -s -X DELETE -H "Authorization: Bearer $DOCKER_TOKEN" -o response.txt -w "%{http_code}" "$deleteUrl")
+            # Split the status code and response.
             http_code="${response: -3}"
-            
-            # If the response is not 204 it means that something went wrong and exit ungracefully
-            if [[ $http_code -ne 204 ]]; then
-              response_body=$(<response.txt)
-              echo "Deleting $TAG Request failed $http_code ... $response_body"
+            response_body=$(<response.txt)
+
+            # If status code is 404 it means we have reached the end of the list so we can exit the loop and the job will be completed
+            if [[ $http_code -eq 404 ]]; then
+              echo "Could not find object so most likely we have reached the end - $response_body ..."
+              break
+            fi
+
+            # If status code is not 200 exit ungracefully.
+            if [[ $http_code -ne 200 ]]; then
+              echo "Request failed - $response_body ..."
               exit 1
             fi
+
+            # Get all image tags that end with .dev
+            TAGS_DEV=$(echo "$response_body" | jq -r '.results[] | select(.name | endswith(".dev")) | .name')
+
+            # Get all image tags that match the staging regex
+            TAGS_STAGING=$(echo "$response_body" | jq -r '.results[] | select(.name | test("[a-f0-9]{7,10}$")) | .name')
+          
+            process_tags "$TAGS_DEV"
+            process_tags "$TAGS_STAGING"
+          
+            # If there are no more pages to iterate through exit the loop and the job should be completed successfully
+            if [[ "$(echo "$response" | jq -r '.next')" == "null" ]]; then # More reliable next page check
+              echo "Exiting paging loop for $REPO..."
+              break
+            fi
+
+            #Update pages and set KEEP_LATEST to 0 as for pages > 1 we do not want to keep any values
+            # this is not an issue because it is unlikely that we will have 100 items (the first page) with no .dev images
+            KEEP_LATEST=0
+            ((CURRENT_PAGE++))
           done
 
-          # If there are no more pages to iterate through exit the loop and the job should be completed successfully
-          if [[ "$next" == "null" ]]; then
-            echo "Exiting paging loop for $REPO..."
-            break
-          fi
-
-          #Update pages and set KEEP_LATEST to 0 as for pages > 1 we do not want to keep any values
-          # this is not an issue because it is unlikely that we will have 100 items (the first page) with no .dev images
-          KEEP_LATEST=0
-          ((CURRENT_PAGE++))
-        done
-
-        echo "Cleanup completed for repository: $REPO"
+          echo "Cleanup completed for repository: $REPO"
+        done # End of the repository loop
