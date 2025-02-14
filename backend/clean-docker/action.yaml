@@ -48,7 +48,9 @@ runs:
         DOCKER_TOKEN: ${{ env.DOCKER_TOKEN }}
       run: |
         # Inputs
-        REPOS=(${${{ inputs.docker_repo }}}) # Split comma-separated string into an array
+        REPOS=() # Initialize an empty array
+        IFS=',' read -r -a REPOS <<< "${{ inputs.docker_repo }}"  # Read into array, using comma as IFS
+
         KEEP_LATEST="${{ inputs.keep_latest }}"
 
         # Function to delete tags, handles errors
