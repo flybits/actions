@@ -132,8 +132,19 @@ runs:
               git stash pop;
             fi
 
-            git commit -am"Auto-release $TAG"
-            git push origin $BRANCH || try_commit_push
+            git commit -am "Auto-release $TAG"
+
+            #Max re-tries is 4
+            for i in {1..4}; do
+              if git push origin $BRANCH || try_commit_push; then
+                echo "Upload Success"
+                break
+              else
+                SLEEP_TIME=$((RANDOM % 11 + 5))  # Generates a random number between 5 and 15
+                echo "Upload failed, retrying attempt $i in $SLEEP_TIME seconds..."
+                sleep $SLEEP_TIME
+              fi
+            done
           }
 
           # Check empty commit
