@@ -23,7 +23,7 @@ runs:
     - uses: actions/setup-go@v5
       with:
         go-version-file: 'go.mod'
-        go-version: '1.23'
+        go-version: '1.24'
         check-latest: true
     - name: Configure git for private modules
       run: git config --global url."https://${{inputs.deployment_token}}@github.com".insteadOf "https://github.com"
@@ -42,7 +42,7 @@ runs:
       shell: bash
     - name: Send data to Slack If Failure
       if: inputs.slack_webhook_url != '' && failure()
-      uses: slackapi/slack-github-action@v1.26.0
+      uses: slackapi/slack-github-action@v1.27.1
       id: slack-failure
       with:
         payload: |
@@ -72,7 +72,7 @@ runs:
         SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
     - name: Send data to Slack If Success
       if: inputs.slack_webhook_url != '' && !failure() && inputs.show_success_slack_msg == 'true'
-      uses: slackapi/slack-github-action@v1.26.0
+      uses: slackapi/slack-github-action@v1.27.1
       id: slack-success
       with:
         payload: |
