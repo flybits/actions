@@ -136,7 +136,7 @@ runs:
 
             #Max re-tries is 4
             for i in {1..4}; do
-              if git push origin $BRANCH || try_commit_push; then
+              if git push origin $BRANCH; then
                 echo "Upload Success"
                 break
               else
