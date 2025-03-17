@@ -42,7 +42,7 @@ runs:
       shell: bash
     - name: Send data to Slack If Failure
       if: inputs.slack_webhook_url != '' && failure()
-      uses: slackapi/slack-github-action@v1.27.1
+      uses: slackapi/slack-github-action@v2.0.0
       id: slack-failure
       with:
         payload: |
@@ -72,7 +72,7 @@ runs:
         SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
     - name: Send data to Slack If Success
       if: inputs.slack_webhook_url != '' && !failure() && inputs.show_success_slack_msg == 'true'
-      uses: slackapi/slack-github-action@v1.27.1
+      uses: slackapi/slack-github-action@v2.0.0
       id: slack-success
       with:
         payload: |
