@@ -45,6 +45,8 @@ runs:
       uses: slackapi/slack-github-action@v2.0.0
       id: slack-failure
       with:
+        webhook: ${{ inputs.slack_webhook_url }}
+        webhook-type: incoming-webhook
         payload: |
           {
             "attachments": [
@@ -67,14 +69,13 @@ runs:
               }
             ]
           }
-      env:
-        SLACK_WEBHOOK_URL: ${{ inputs.slack_webhook_url }}
-        SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
     - name: Send data to Slack If Success
       if: inputs.slack_webhook_url != '' && !failure() && inputs.show_success_slack_msg == 'true'
       uses: slackapi/slack-github-action@v2.0.0
       id: slack-success
       with:
+        webhook: ${{ inputs.slack_webhook_url }}
+        webhook-type: incoming-webhook
         payload: |
           {
             "attachments": [
@@ -90,6 +91,3 @@ runs:
               }
             ]
           }
-      env:
-        SLACK_WEBHOOK_URL: ${{ inputs.slack_webhook_url }}
-        SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
