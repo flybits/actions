@@ -104,6 +104,7 @@ runs:
 
     #Setup SSH Keys
     - name: Setup SSH Keys and known_hosts
+      shell: bash
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       run: |
@@ -120,6 +121,7 @@ runs:
         git config --global user.email "${{ inputs.who_trigger }}"
 
     - name: Install the Apple certificate and provisioning profile
+      shell: bash
       env:
         BUILD_CERTIFICATE_BASE64: ${{ inputs.build_certification_base64 }}
         P12_PASSWORD: ${{ inputs.p12_password }}
@@ -177,6 +179,7 @@ runs:
         /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $build_number" ${{ inputs.plist_path }}
 
     - name: build archive
+      shell: bash
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       run: |
@@ -189,6 +192,7 @@ runs:
 
     #Export IPA file
     - name: export ipa
+      shell: bash
       env:
         EXPORT_OPTIONS_PLIST: ${{ inputs.export_options_plist }}
       run: |
@@ -198,6 +202,7 @@ runs:
 
     #Decode API Key
     - name: decode API key
+      shell: bash
       env:
         API_KEY_BASE64: ${{ inputs.ios_appstore_api_private_key }}
       run: |
@@ -206,6 +211,7 @@ runs:
 
     #Upload to app store
     - name: Upload to testflight
+      shell: bash
       run: |
         xcrun altool --validate-app -f ${{ runner.temp }}/build/${{ inputs.ipa_name }} -t ios --apiKey ${{ inputs.ios_appstore_api_key_id }} --apiIssuer ${{ inputs.ios_appstore_issuer_id }}
         xcrun altool --upload-app -f ${{ runner.temp }}/build/${{ inputs.ipa_name }} -t ios --apiKey ${{ inputs.ios_appstore_api_key_id }} --apiIssuer ${{ inputs.ios_appstore_issuer_id }}
