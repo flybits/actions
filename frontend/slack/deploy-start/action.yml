@@ -36,7 +36,7 @@ runs:
 
     - name: Notify Slack
       id: notify-slack
-      uses: slackapi/slack-github-action@v2.0.0
+      uses: slackapi/slack-github-action@v2.1.0
       with:
         errors: true
         method: chat.postMessage
