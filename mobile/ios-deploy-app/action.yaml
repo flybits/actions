@@ -186,7 +186,7 @@ runs:
         xcodebuild -scheme "${{ inputs.scheme }}" \
         -archivePath $RUNNER_TEMP/${{ inputs.xcarchive_path }} \
         -sdk iphoneos \
-        -configuration Debug \
+        -configuration Release \
         -destination generic/platform=iOS \
         clean archive          
 
