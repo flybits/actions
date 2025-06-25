@@ -19,6 +19,8 @@ PR_TITLES=(
   "feat(merchant-portal | ): add Polish language!"
   "feat(merchant-portal): add Polish language!"
   "docs(scope)!: send an email to the customer when a product is shipped"
+  "fix(control-tower-organization): fix the issue with the control tower organization"
+  ""
 )
 
 function validate_pr_titles() {
@@ -48,7 +50,7 @@ validate_pr_titles
 
 echo -e "\nshould use one of the following scopes: "
 echo -e "analytics, audit-history, content, content-manager, context-rule, deps, deps-dev, experience, file-upload, flow-visualizer, location, location-management, maker-cheker, merchant-portal, notifications, push, release, rule, rule-builder, schedule, security, security-alert, smart-targeting, template-library, zones-and-modules\n"
-REGEX='^([a-zA-Z ]+)(\((analytics|audit\-history|content|content\-manager|context\-rule|deps|deps\-dev|experience|file\-upload|flow\-visualizer|location|location\-management|maker\-cheker|merchant\-portal|notifications|push|release|rule|rule\-builder|schedule|security|security\-alert|smart\-targeting|template\-library|zones\-and\-modules).*\))?!?: .+$'
+ REGEX='^([a-zA-Z ]+)(\((analytics|audit\-history|content|content\-manager|context\-rule|deps|deps\-dev|experience|file\-upload|flow\-visualizer|github\-actions|location|location\-management|maker\-cheker|merchant\-portal|notifications|push|release|rule|rule\-builder|schedule|security|security\-alert|smart\-targeting|template\-library|zones\-and\-modules|control\-tower\-organization).*\))?!?: .+$'
 validate_pr_titles
 
 

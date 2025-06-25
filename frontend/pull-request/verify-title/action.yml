@@ -44,7 +44,7 @@ runs:
         validate
 
         MESSAGE='should use one of the following scopes:\n\tanalytics, audit-history, content, content-manager, context-rule, deps, deps-dev, experience,\n\tfile-upload, flow-visualizer, github-actions, location, location-management, maker-cheker, merchant-portal,\n\tnotifications, push, release, rule, rule-builder, schedule, security, security-alert,\n\tsmart-targeting, template-library, zones-and-modules\n'
-        REGEX='^([a-zA-Z ]+)(\((analytics|audit\-history|content|content\-manager|context\-rule|deps|deps\-dev|experience|file\-upload|flow\-visualizer|github\-actions|location|location\-management|maker\-cheker|merchant\-portal|notifications|push|release|rule|rule\-builder|schedule|security|security\-alert|smart\-targeting|template\-library|zones\-and\-modules).*\))?!?: .+$'
+        REGEX='^([a-zA-Z ]+)(\((analytics|audit\-history|content|content\-manager|context\-rule|deps|deps\-dev|experience|file\-upload|flow\-visualizer|github\-actions|location|location\-management|maker\-cheker|merchant\-portal|notifications|push|release|rule|rule\-builder|schedule|security|security\-alert|smart\-targeting|template\-library|zones\-and\-modules|control\-tower\-organization).*\))?!?: .+$'
         validate
 
         MESSAGE='should use the pipe character with spaces before and after (" | ") to separate\n\tthe scope and Jira ticket number in the pull request title\n'
