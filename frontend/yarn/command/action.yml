@@ -1,0 +1,75 @@
+name: 'Yarn Command'
+description: 'Executes a specified command using Yarn, with optional Slack notifications for success or failure'
+
+inputs:
+  command:
+    description: 'A command to execute'
+    required: true
+
+  github-personal-access-token:
+    description: 'GitHub personal access token for accessing private NPM packages'
+    default: ${{ github.token }}
+    required: false
+
+  slack-failure-message:
+    description: 'Message to send to Slack if the command fails'
+    default: 'Yarn command failed'
+    required: false
+
+  slack-notify-on-failure:
+    description: 'Notify a Slack channel if the command fails'
+    default: false
+    required: false
+
+  slack-notify-on-success:
+    description: 'Notify a Slack channel if the command succeeds'
+    default: false
+    required: false
+
+  slack-success-message:
+    description: 'Message to send to Slack if the command succeeds'
+    default: 'Yarn command succeeded'
+    required: false
+
+  slack-bot-token:
+    description: 'Bot token for sending messages to Slack'
+    required: false
+
+  slack-thread-ts:
+    description: 'Timestamp of the Slack thread message'
+    required: false
+
+  web-app-name:
+    description: 'Human-readable name of the web application'
+    default: ${{ github.event.repository.name }}
+    required: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Validate inputs
+      shell: bash
+      run: |
+        [[ "${{ inputs.command }}" ]] || { echo "'command' input is empty"; exit 1; }
+
+    - name: Run command
+      shell: bash
+      run: yarn run ${{ inputs.command }}
+
+    - if: ${{ inputs.slack-notify-on-failure == 'true' && failure() }}
+      name: Send failure message to Slack
+      uses: flybits/frontend-github-actions/slack/job-message@main
+      with:
+        bot-token: ${{ inputs.slack-bot-token }}
+        message: ${{ inputs.slack-failure-message}}
+        thread-ts: ${{ inputs.slack-thread-ts }}
+        web-app-name: ${{ inputs.web-app-name }}
+
+    - if: ${{ inputs.slack-notify-on-success == 'true' && success() }}
+      name: Send success message to Slack
+      uses: flybits/frontend-github-actions/slack/job-message@main
+      with:
+        bot-token: ${{ inputs.slack-bot-token }}
+        message: ${{ inputs.slack-success-message}}
+        thread-ts: ${{ inputs.slack-thread-ts }}
+        web-app-name: ${{ inputs.web-app-name }}
