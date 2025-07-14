@@ -42,7 +42,7 @@ runs:
       shell: bash
     - name: Send data to Slack If Failure
       if: inputs.slack_webhook_url != '' && failure()
-      uses: slackapi/slack-github-action@v2.1.0
+      uses: slackapi/slack-github-action@v2.1.1
       id: slack-failure
       with:
         webhook: ${{ inputs.slack_webhook_url }}
@@ -71,7 +71,7 @@ runs:
           }
     - name: Send data to Slack If Success
       if: inputs.slack_webhook_url != '' && !failure() && inputs.show_success_slack_msg == 'true'
-      uses: slackapi/slack-github-action@v2.1.0
+      uses: slackapi/slack-github-action@v2.1.1
       id: slack-success
       with:
         webhook: ${{ inputs.slack_webhook_url }}
