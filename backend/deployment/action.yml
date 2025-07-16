@@ -67,7 +67,20 @@ runs:
         next-version-increment-major: false
     - name: Setup Git
       shell: bash
-      run: git config --local user.name "${{ inputs.who_trigger }}"
+      run: |
+        PUSHER_NAME="${{ github.event.pusher.name }}"
+        PUSHER_EMAIL="${{ github.event.pusher.email }}"
+          
+        if [ -z "$PUSHER_EMAIL" ]; then
+          echo "Pusher email is private or not available for this push event. Using GitHub bot email."
+          COMMIT_EMAIL="dev@flybits.com"
+        else
+          COMMIT_EMAIL="$PUSHER_EMAIL"
+        fi
+
+        echo "Setting git config with name: $PUSHER_NAME and email: $COMMIT_EMAIL"
+        git config --local user.name "$PUSHER_NAME"
+        git config --local user.email "$COMMIT_EMAIL"
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
     - name: Releasing current version
