@@ -29,24 +29,13 @@ runs:
       run: |
         [[ "${{ inputs.keep_latest }}" -ge 1 ]] || { echo "keep_latest must be at least 1" ; exit 1; }
 
-    - name: Log in to Docker Hub
-      uses: docker/login-action@v3
-      with:
-        username: ${{ inputs.docker_username }}
-        password: ${{ inputs.docker_password }}
-
-    - name: Retrieving Docker JWT
-      shell: bash
-      run: |
-        # Decode the Docker config to extract the token
-        TOKEN=$(jq -r '.auths["https://index.docker.io/v2/"].auth' ~/.docker/config.json | base64 -d | cut -d':' -f2)
-        echo "DOCKER_TOKEN=${TOKEN}" >> $GITHUB_ENV
-
     - name: Cleanup Repository Images
       shell: bash
-      env:
-        DOCKER_TOKEN: ${{ env.DOCKER_TOKEN }}
       run: |
+
+        #LOGIN
+        DOCKER_TOKEN=$(curl -s -H "Content-Type: application/json" -X POST -d '{"identifier" : "${{ inputs.docker_username }}", "secret" : "${{ inputs.docker_password }}"}' https://hub.docker.com/v2/auth/token | jq -r .access_token)
+
         # Inputs
         INPUTTED_REPOS="${{ inputs.docker_repo }}"
         IFS=',' read -r -a REPOS <<< "$INPUTTED_REPOS"  # Read into array, using comma as IFS
