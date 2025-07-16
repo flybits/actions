@@ -39,7 +39,7 @@ runs:
       shell: bash
       run: |
         # Decode the Docker config to extract the token
-        TOKEN=$(jq -r '.auths["https://index.docker.io/v1/"].auth' ~/.docker/config.json | base64 -d | cut -d':' -f2)
+        TOKEN=$(jq -r '.auths["https://index.docker.io/v2/"].auth' ~/.docker/config.json | base64 -d | cut -d':' -f2)
         echo "DOCKER_TOKEN=${TOKEN}" >> $GITHUB_ENV
 
     - name: Cleanup Repository Images
