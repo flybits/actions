@@ -68,19 +68,12 @@ runs:
     - name: Setup Git
       shell: bash
       run: |
-        PUSHER_NAME="${{ github.event.pusher.name }}"
-        PUSHER_EMAIL="${{ github.event.pusher.email }}"
-          
-        if [ -z "$PUSHER_EMAIL" ]; then
-          echo "Pusher email is private or not available for this push event. Using GitHub bot email."
-          COMMIT_EMAIL="dev@flybits.com"
-        else
-          COMMIT_EMAIL="$PUSHER_EMAIL"
-        fi
+          ACTOR="${{ inputs.who_trigger }}"
+          GIT_EMAIL="${ACTOR}@users.noreply.github.com"
 
-        echo "Setting git config with name: $PUSHER_NAME and email: $COMMIT_EMAIL"
-        git config --local user.name "$PUSHER_NAME"
-        git config --local user.email "$COMMIT_EMAIL"
+          echo "Using $ACTOR <$GIT_EMAIL>"
+          git config --local user.name "$ACTOR"
+          git config --local user.email "$GIT_EMAIL"
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
     - name: Releasing current version
