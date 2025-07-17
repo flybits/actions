@@ -123,36 +123,31 @@ runs:
           kustomize edit set image $TAG
 
           try_commit_push () {
-            UPSTREAM=${1:-'@{u}'}
-            DIFFCOMM=$(git fetch origin --quiet; git rev-list HEAD..."$UPSTREAM" --count)
-            if [ "$DIFFCOMM" -gt 0 ]; then
-              echo "Pulling $UPSTREAM";
-              git stash;
-              git pull --no-edit;
-              git stash pop;
+            if [ -z "$(git status --porcelain)" ]; then
+              echo "No changes detected after kustomize edit. Nothing to commit."
+              break
             fi
 
-            git commit -am "Auto-release $TAG"
+            git add . # Stage all changes, including the kustomize modification
+            git commit -m "Auto-release $TAG" || { echo "Commit failed. Exiting."; return 1; }
 
             #Max re-tries is 4
             for i in {1..4}; do
+              echo "Attempting to push (attempt $i)..."
               if git push origin $BRANCH; then
                 echo "Upload Success"
                 break
               else
+                echo "Pulling latest changes from remote..."
+                git pull --rebase origin $BRANCH
                 SLEEP_TIME=$((RANDOM % 11 + 5))  # Generates a random number between 5 and 15
                 echo "Upload failed, retrying attempt $i in $SLEEP_TIME seconds..."
                 sleep $SLEEP_TIME
               fi
             done
           }
-
-          # Check empty commit
-          if [ -n "$(git status --porcelain)" ]; then
-            try_commit_push
-          else
-            echo "nothing to deploy"
-          fi
+          
+          try_commit_push
         }
         
         BRANCH=main
