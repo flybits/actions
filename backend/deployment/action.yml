@@ -68,12 +68,12 @@ runs:
     - name: Setup Git
       shell: bash
       run: |
-          ACTOR="${{ inputs.who_trigger }}"
-          GIT_EMAIL="${ACTOR}@users.noreply.github.com"
+        ACTOR="${{ inputs.who_trigger }}"
+        GIT_EMAIL="${ACTOR}@users.noreply.github.com"
 
-          echo "Using $ACTOR <$GIT_EMAIL>"
-          git config --local user.name "$ACTOR"
-          git config --local user.email "$GIT_EMAIL"
+        echo "Using $ACTOR <$GIT_EMAIL>"
+        git config --local user.name "$ACTOR"
+        git config --local user.email "$GIT_EMAIL"
       env:
         GITHUB_TOKEN: ${{ inputs.github_token }}
     - name: Releasing current version
