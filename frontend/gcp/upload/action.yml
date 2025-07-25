@@ -79,7 +79,7 @@ runs:
           echo "Failed to generate build.json file"
           exit 1
         fi
-    - name: Copy files/folders to the bucket
+    - name: Debugging step
       shell: bash
       run: | 
         ls -la
