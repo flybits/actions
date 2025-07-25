@@ -79,7 +79,12 @@ runs:
           echo "Failed to generate build.json file"
           exit 1
         fi
-
+    - name: Debugging step
+      shell: bash
+      run: | 
+        ls -la
+        cat ${{ inputs.gcp-upload-from-path }}/build.json
+        
     - name: Copy files/folders to the bucket
       uses: google-github-actions/upload-cloud-storage@v2
       with:
