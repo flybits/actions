@@ -20,7 +20,7 @@ runs:
         [[ "${{ inputs.github-personal-access-token }}" ]] || { echo "github-personal-access-token input is empty"; exit 1; }
 
     - name: Checkout the repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
       with:
         ref: ${{ inputs.git-ref }}
         repository: 'flybits/frontend-cypress'
