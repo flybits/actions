@@ -1,0 +1,142 @@
+name: 'Notify pull request'
+description: 'Extracts PR data and sends a formatted notification to a Slack channel.'
+
+inputs:
+  slack-bot-token:
+    description: 'The bot token to use for posting to Slack'
+    required: true
+
+  slack-channel-id:
+    description: 'The Slack channel to post the message to'
+    required: true
+
+  web-app-name:
+    description: 'Human-readable name of the web application'
+    default: ${{ github.event.repository.name }}
+    required: false
+
+outputs:
+  slack-message-timestamp:
+    description: 'The timestamp of the sent Slack message.'
+    value: ${{ steps.send_slack_message.outputs.ts }}
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Prepare notification data
+      id: prepare
+      shell: bash
+      run: |
+        # Exit immediately if a command exits with a non-zero status.
+        set -e
+
+        # --- A. Extract Jira Ticket from PR Title ---
+        PR_TITLE="${{ github.event.pull_request.title }}"
+        JIRA_ISSUE_ID=$(echo "$PR_TITLE" | grep -o -P '[A-Z]+-(?!0+$)[0-9]+' | head -n 1 || true)
+
+        if [ -n "$JIRA_ISSUE_ID" ]; then
+          JIRA_ISSUE_URL="https://flybits.atlassian.net/browse/${JIRA_ISSUE_ID}"
+          JIRA_DISPLAY_TEXT="<${JIRA_ISSUE_URL}|${JIRA_ISSUE_ID}>"
+        else
+          JIRA_DISPLAY_TEXT="Not Found"
+        fi
+
+        echo "jira_display_text=${JIRA_DISPLAY_TEXT}" >> $GITHUB_OUTPUT
+
+        # --- B. Determine Urgency from PR Labels ---
+        LABELS_JSON='${{ toJSON(github.event.pull_request.labels) }}'
+
+        # Default values
+        URGENCY_LABEL_TEXT="🔵 P2 Medium"
+        URGENCY_DESCRIPTION_TEXT="*Action Required: Within 2-3 business days.* _The default for most standard pull requests, such as new features or routine fixes that are not time-sensitive._"
+
+        # Use `jq -e` to check for the existence of a label. This is more robust as it uses the exit code.
+        if echo "$LABELS_JSON" | jq -e 'any(.[].name; . == "p0-critical")' > /dev/null; then
+          URGENCY_LABEL_TEXT="🔴 P0 Critical"
+          URGENCY_DESCRIPTION_TEXT="*Action Required: Within 1-3 hours.* _For production emergencies (e.g., hotfixes, critical customer patches). Reviewers should pause their current work to review this PR immediately._"
+        elif echo "$LABELS_JSON" | jq -e 'any(.[].name; . == "p1-high")' > /dev/null; then
+          URGENCY_LABEL_TEXT="🟠 P1 High"
+          URGENCY_DESCRIPTION_TEXT="*Action Required: Within 24 hours.* _For high-priority features and important bugs. This should be at the top of a reviewer's queue after any critical issues are resolved._"
+        elif echo "$LABELS_JSON" | jq -e 'any(.[].name; . == "p3-low")' > /dev/null; then
+          URGENCY_LABEL_TEXT="⚪️ P3 Low"
+          URGENCY_DESCRIPTION_TEXT="*Action Required: Within 5 business days (1 week).* _For non-urgent changes like code cleanup, minor refactoring, or documentation updates. Review these when you have available time, but do not let them linger for more than a week._"
+        fi
+
+        echo "urgency_label_text=${URGENCY_LABEL_TEXT}" >> $GITHUB_OUTPUT
+        echo "urgency_description_text=${URGENCY_DESCRIPTION_TEXT}" >> $GITHUB_OUTPUT
+
+        # --- C. Determine Author's Display Name ---
+        AUTHOR_NAME="${{ github.event.pull_request.user.name }}"
+        if [ -z "$AUTHOR_NAME" ] || [ "$AUTHOR_NAME" == "null" ]; then
+          AUTHOR_NAME="${{ github.event.pull_request.user.login }}"
+        fi
+        echo "author_name=${AUTHOR_NAME}" >> $GITHUB_OUTPUT
+
+        # --- D. Determine Repository Display Name ---
+        REPO_DISPLAY_NAME="${{ inputs.web-app-name }}"
+        if [ -z "$REPO_DISPLAY_NAME" ]; then
+          REPO_DISPLAY_NAME="${{ github.repository }}"
+        fi
+        echo "repo_display_name=${REPO_DISPLAY_NAME}" >> $GITHUB_OUTPUT
+
+        # --- E. Format the Creation Date ---
+        CREATED_AT_STRING="${{ github.event.pull_request.created_at }}"
+        FORMATTED_DATE=$(date -d "$CREATED_AT_STRING" "+%B %d, %Y")
+        echo "formatted_date=${FORMATTED_DATE}" >> $GITHUB_OUTPUT
+
+    - name: Send message to Slack
+      id: send_slack_message
+      uses: slackapi/slack-github-action@v2.1.1
+      with:
+        method: 'chat.postMessage'
+        token: ${{ inputs.slack-bot-token }}
+        payload: |
+          channel: ${{ inputs.slack-channel-id }}
+          text: "🚀 Pull Request Inbound: ${{ github.event.pull_request.title }}"
+          blocks:
+          - type: header
+            text:
+              type: plain_text
+              text: ":rocket: Pull Request Inbound"
+              emoji: true
+          - type: section
+            text:
+              type: mrkdwn
+              text: "*<${{ github.event.pull_request.html_url }}|${{ github.event.pull_request.title }}>*"
+          - type: section
+            fields:
+            - type: mrkdwn
+              text: |-
+                *Urgency:*
+                ${{ steps.prepare.outputs.urgency_label_text }}
+            - type: mrkdwn
+              text: |-
+                *Jira Ticket:*
+                ${{ steps.prepare.outputs.jira_display_text }}
+            - type: mrkdwn
+              text: |-
+                *Repository:*
+                <${{ github.event.repository.html_url }}|${{ steps.prepare.outputs.repo_display_name }}>
+            - type: mrkdwn
+              text: |-
+                *Author:*
+                <${{ github.event.pull_request.user.html_url }}|${{ steps.prepare.outputs.author_name }}>
+          - type: section
+            text:
+              type: mrkdwn
+              text: "*Opened:* ${{ steps.prepare.outputs.formatted_date }}"
+          - type: context
+            elements:
+            - type: mrkdwn
+              text: "${{ steps.prepare.outputs.urgency_description_text }}"
+
+    - name: Add reaction to the message
+      id: add_reaction
+      uses: slackapi/slack-github-action@v2.1.1
+      with:
+        method: 'reactions.add'
+        token: ${{ inputs.slack-bot-token }}
+        payload: |
+          channel: ${{ inputs.slack-channel-id }}
+          timestamp: ${{ steps.send_slack_message.outputs.ts }}
+          name: "pray"
