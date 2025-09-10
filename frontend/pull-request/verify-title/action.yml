@@ -1,52 +1,113 @@
-name: Verify pull request's title
-description: Enforces that the title of a pull request must follow the Conventional Commits format
+name: "Verify pull request's title"
+description: 'Enforces that the title of a pull request must follow the Conventional Commits format'
 
 inputs:
-  github-personal-access-token:
-    description: 'A token used for accessing private repository (created under Flybits Inc. organization)'
-    default: ${{ github.token }}
+  additional-scopes:
+    description: 'A pipe-separated list of additional scopes to allow (e.g., "scope1|scope2").'
     required: false
+    default: ''
+  additional-types:
+    description: 'A pipe-separated list of additional types to allow (e.g., "type1|type2").'
+    required: false
+    default: ''
+  jira-project-keys:
+    description: 'A pipe-separated list of allowed Jira project keys (e.g., "PROJ|TEST").'
+    required: false
+    default: 'PET'
 
 runs:
   using: 'composite'
   steps:
-    - name: Validate Github Actions' inputs
+    - name: Verify Conventional Commits structure
       shell: bash
       run: |
-        [[ "${{ inputs.github-personal-access-token }}" ]] || { echo "github-personal-access-token input is empty"; exit 1; }
-
-    - name: Verify Conventional Commits' structure
-      shell: bash
-      run: |
-        echo
-
-        function validate() {
-          if [[ "$PR_TITLE" =~ $REGEX ]]; then
-            echo -e "\t✅ $MESSAGE"
-          else
-            echo -e "\t❌ $MESSAGE"
-            exit 1
-          fi
-        }
-
         PR_TITLE="${{ github.event.pull_request.title }}"
 
-        MESSAGE='should start with a lowercase word, except "BREAKING"\n'
-        REGEX='^(BREAKING CHANGE|[a-z]+).*$'
-        validate
+        # --- DYNAMIC SETUP (from inputs) ---
+        BASE_SCOPES="analytics|apns|audit-history|config|connector|content|content-manager|context-rule|control-tower|control-tower-organization|deps|deps-dev|developer-portal|email|experience|experience-studio|fcm|file-upload|flow-visualizer|github-actions|group|location|location-management|maker-cheker|merchant-portal|notifications|organization|project|push|release|rule|rule-builder|saml|schedule|security|security-alert|smart-targeting|sms|template-library|user-invite|zones-and-modules"
+        BASE_TYPES="BREAKING CHANGE|build|chore|ci|docs|feat|fix|perf|refactor|release|revert|style|test"
 
-        MESSAGE='should follow the Conventional Commit (https://www.conventionalcommits.org) format\n'
-        REGEX='^(BREAKING CHANGE|[a-z]+)(\(.+\))?!?: .+$'
-        validate
+        # Trim and combine additional inputs to handle potential whitespace
+        ADDITIONAL_SCOPES_TRIMMED=$(echo "${{ inputs.additional-scopes }}" | xargs)
+        ADDITIONAL_TYPES_TRIMMED=$(echo "${{ inputs.additional-types }}" | xargs)
+        JIRA_KEYS_TRIMMED=$(echo "${{ inputs.jira-project-keys }}" | xargs)
 
-        MESSAGE='should use one of the following types:\n\tBREAKING CHANGE, build, chore, ci, docs, feat, fix, perf, refactor, release, revert, style, test\n'
-        REGEX='^(BREAKING CHANGE|build|chore|ci|docs|feat|fix|perf|refactor|release|revert|style|test)'
-        validate
+        COMBINED_SCOPES="$BASE_SCOPES"
+        if [[ -n "$ADDITIONAL_SCOPES_TRIMMED" ]]; then
+          COMBINED_SCOPES="${COMBINED_SCOPES}|${ADDITIONAL_SCOPES_TRIMMED}"
+        fi
 
-        MESSAGE='should use one of the following scopes:\n\tanalytics, audit-history, content, content-manager, context-rule, deps, deps-dev, experience,\n\tfile-upload, flow-visualizer, github-actions, location, location-management, maker-cheker, merchant-portal,\n\tnotifications, push, release, rule, rule-builder, schedule, security, security-alert,\n\tsmart-targeting, template-library, zones-and-modules\n'
-        REGEX='^([a-zA-Z ]+)(\((analytics|audit\-history|content|content\-manager|context\-rule|deps|deps\-dev|experience|file\-upload|flow\-visualizer|github\-actions|location|location\-management|maker\-cheker|merchant\-portal|notifications|push|release|rule|rule\-builder|schedule|security|security\-alert|smart\-targeting|template\-library|zones\-and\-modules|control\-tower\-organization).*\))?!?: .+$'
-        validate
+        COMBINED_TYPES="$BASE_TYPES"
+        if [[ -n "$ADDITIONAL_TYPES_TRIMMED" ]]; then
+          COMBINED_TYPES="${COMBINED_TYPES}|${ADDITIONAL_TYPES_TRIMMED}"
+        fi
 
-        MESSAGE='should use the pipe character with spaces before and after (" | ") to separate\n\tthe scope and Jira ticket number in the pull request title\n'
-        REGEX='^([a-zA-Z ]+)(\([a-zA-Z0-9 |-]+\))?!?: .+' # Need to refine this regex to make it more stricter
-        validate
+        # --- STEP-BY-STEP VALIDATION ---
+
+        # 1. Check the overall structure: type(scope)!: description
+        if ! [[ "$PR_TITLE" =~ ^([a-zA-Z ]+)(\(.*\))?(!?):(.+) ]]; then
+          echo -e "❌ INVALID FORMAT: The PR title does not follow the 'type(scope)!: description' structure."
+          echo -e "🔍 Example: 'feat(analytics): add new tracking event'"
+          exit 1
+        fi
+
+        # Extract parts using Bash's BASH_REMATCH array
+        PR_TYPE="${BASH_REMATCH[1]}"
+        PR_SCOPE_FULL="${BASH_REMATCH[2]}"
+        PR_DESC_RAW="${BASH_REMATCH[4]}"
+        PR_DESC_TRIMMED=$(echo "$PR_DESC_RAW" | xargs) # Trim whitespace from description
+
+        # 2. Check if the description is empty
+        if [[ -z "$PR_DESC_TRIMMED" ]]; then
+            echo -e "❌ MISSING DESCRIPTION: The title must have a description after the colon."
+            exit 1
+        fi
+
+        # 3. Check if the description ends with a period
+        if [[ "$PR_DESC_TRIMMED" == *\. ]]; then
+            echo -e "❌ INVALID DESCRIPTION: The description must not end with a period."
+            exit 1
+        fi
+
+        # 4. Validate the type casing (must be lowercase, except for BREAKING CHANGE)
+        if [[ "$PR_TYPE" != "BREAKING CHANGE" && "$PR_TYPE" != "$(echo "$PR_TYPE" | tr '[:upper:]' '[:lower:]')" ]]; then
+            echo -e "❌ INVALID TYPE CASING: The type '$PR_TYPE' must be in lowercase (e.g., 'feat', not 'Feat')."
+            exit 1
+        fi
+
+        # 5. Validate the type against the allowed list
+        TYPE_REGEX="^(${COMBINED_TYPES})$"
+        if ! [[ "$PR_TYPE" =~ $TYPE_REGEX ]]; then
+          echo -e "❌ INVALID TYPE: The type '$PR_TYPE' is not allowed."
+          echo -e "✅ Allowed types are: ${COMBINED_TYPES//|/, }"
+          exit 1
+        fi
+
+        # 6. Validate the scope and Jira ticket (only if a scope is present)
+        if [[ -n "$PR_SCOPE_FULL" ]]; then
+          # Extract and trim the content *inside* the parentheses
+          SCOPE_CONTENT=$(echo "$PR_SCOPE_FULL" | sed 's/(//' | sed 's/)//' | xargs)
+
+          # Define the regex for a valid scope (without Jira)
+          SCOPE_ONLY_REGEX="^(${COMBINED_SCOPES})$"
+
+          # Define the regex for a Jira ticket part
+          JIRA_KEY_PART="${JIRA_KEYS_TRIMMED//|/|}" # Prepare for regex
+          if [[ -z "$JIRA_KEY_PART" ]]; then
+            JIRA_KEY_PART="[A-Z]+" # This case should not be hit if default is set, but good for safety
+          fi
+          JIRA_REGEX="^(${COMBINED_SCOPES}) \| (${JIRA_KEY_PART})-[0-9]+$"
+
+          if ! [[ "$SCOPE_CONTENT" =~ $SCOPE_ONLY_REGEX || "$SCOPE_CONTENT" =~ $JIRA_REGEX ]]; then
+             echo -e "❌ INVALID SCOPE OR JIRA FORMAT: The scope '$SCOPE_CONTENT' is not valid."
+             echo -e "✅ Allowed scopes are: ${COMBINED_SCOPES//|/, }"
+             if [[ -n "$JIRA_KEYS_TRIMMED" ]]; then
+                echo -e "🔍 The correct Jira ticket format is: 'scope | KEY-123' (where KEY is one of: ${JIRA_KEYS_TRIMMED//|/, })."
+             else
+                echo -e "🔍 The correct Jira ticket format is: 'scope | TICKET-123' (with spaces around the '|')."
+             fi
+             exit 1
+          fi
+        fi
+
+        echo "✅ PR title is valid."
