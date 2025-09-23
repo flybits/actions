@@ -24,17 +24,23 @@ runs:
         PR_TITLE="${{ github.event.pull_request.title }}"
 
         # --- DYNAMIC SETUP (from inputs) ---
-        BASE_SCOPES="analytics|apns|audit-history|config|connector|content|content-manager|context-rule|control-tower|control-tower-organization|deps|deps-dev|developer-portal|email|experience|experience-studio|fcm|file-upload|flow-visualizer|github-actions|group|location|location-management|maker-cheker|merchant-portal|notifications|organization|project|push|release|rule|rule-builder|saml|schedule|security|security-alert|smart-targeting|sms|template-library|user-invite|zones-and-modules"
         BASE_TYPES="BREAKING CHANGE|build|chore|ci|docs|feat|fix|perf|refactor|release|revert|style|test"
 
+        # Validate mandatory 'scopes' input before proceeding
+        SCOPES_RAW="${{ inputs.scopes }}"
+        if [[ -z "$SCOPES_RAW" ]]; then
+          echo "❌ MISSING SCOPES SPECIFICATION: You must provide the 'scopes' input (e.g., scopes='analytics|notifications')."
+          exit 1
+        fi
+
         # Trim and combine additional inputs to handle potential whitespace
-        ADDITIONAL_SCOPES_TRIMMED=$(echo "${{ inputs.additional-scopes }}" | xargs)
+        SCOPES_TRIMMED=$(echo "$SCOPES_RAW" | xargs)
         ADDITIONAL_TYPES_TRIMMED=$(echo "${{ inputs.additional-types }}" | xargs)
         JIRA_KEYS_TRIMMED=$(echo "${{ inputs.jira-project-keys }}" | xargs)
 
         COMBINED_SCOPES="$BASE_SCOPES"
-        if [[ -n "$ADDITIONAL_SCOPES_TRIMMED" ]]; then
-          COMBINED_SCOPES="${COMBINED_SCOPES}|${ADDITIONAL_SCOPES_TRIMMED}"
+        if [[ -n "$SCOPES_TRIMMED" ]]; then
+          COMBINED_SCOPES="${COMBINED_SCOPES}|${SCOPES_TRIMMED}"
         fi
 
         COMBINED_TYPES="$BASE_TYPES"
