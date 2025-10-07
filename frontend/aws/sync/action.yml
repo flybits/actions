@@ -67,7 +67,7 @@ runs:
         [[ "${{ inputs.aws-s3-bucket-region }}" ]] || { echo "aws-s3-bucket-region input is empty"; exit 1; }
 
     - name: Configure AWS credentials
-      uses: aws-actions/configure-aws-credentials@v4
+      uses: aws-actions/configure-aws-credentials@v5
       with:
         role-to-assume: ${{ inputs.aws-iam-role }}
         aws-region: ${{ inputs.aws-s3-bucket-region }}
