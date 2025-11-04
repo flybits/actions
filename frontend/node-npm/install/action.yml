@@ -16,6 +16,10 @@ inputs:
     default: false
     required: false
 
+  ref:
+    description: 'The branch, tag or SHA to check out.'
+    required: false
+
   slack-bot-token:
     description: 'A bot token to publish a message on Slack'
     required: false
@@ -37,7 +41,14 @@ runs:
       run: |
         [[ "${{ inputs.github-personal-access-token }}" ]] || { echo "github-personal-access-token input is empty"; exit 1; }
 
-    - name: Checkout the repository
+    - name: Checkout the repository (specific ref)
+      if: ${{ inputs.ref != '' }}
+      uses: actions/checkout@v5
+      with:
+        ref: ${{ inputs.ref }}
+
+    - name: Checkout the repository (default ref)
+      if: ${{ inputs.ref == '' }}
       uses: actions/checkout@v5
 
     - name: Install node
