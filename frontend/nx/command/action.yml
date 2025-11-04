@@ -6,6 +6,10 @@ inputs:
     description: 'A command to execute'
     required: true
 
+  git-ref:
+    description: 'The branch, tag or SHA to check out'
+    required: false
+
   github-personal-access-token:
     description: 'GitHub personal access token for accessing private NPM packages'
     default: ${{ github.token }}
@@ -66,6 +70,7 @@ runs:
       uses: flybits/actions/frontend/node-npm/install@main
       with:
         github-personal-access-token: ${{ inputs.github-personal-access-token }}
+        git-ref: ${{ inputs.git-ref }}
         slack-bot-token: ${{ inputs.slack-bot-token }}
         thread-ts: ${{ inputs.slack-thread-ts }}
 

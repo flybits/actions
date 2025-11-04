@@ -2,6 +2,10 @@ name: Install Node and NPM packages
 description: Installs node and project's packages; restore from cache if possible
 
 inputs:
+  git-ref:
+    description: 'The branch, tag or SHA to check out.'
+    required: false
+
   github-personal-access-token:
     description: 'A token used for accessing private NPM packages (published by Flybits Inc.)'
     required: true
@@ -14,10 +18,6 @@ inputs:
   notify-slack-on-failure:
     description: 'Whether to notify a Slack channel if the job fails'
     default: false
-    required: false
-
-  ref:
-    description: 'The branch, tag or SHA to check out.'
     required: false
 
   slack-bot-token:
@@ -42,13 +42,13 @@ runs:
         [[ "${{ inputs.github-personal-access-token }}" ]] || { echo "github-personal-access-token input is empty"; exit 1; }
 
     - name: Checkout the repository (specific ref)
-      if: ${{ inputs.ref != '' }}
+      if: ${{ inputs.git-ref != '' }}
       uses: actions/checkout@v5
       with:
-        ref: ${{ inputs.ref }}
+        ref: ${{ inputs.git-ref }}
 
     - name: Checkout the repository (default ref)
-      if: ${{ inputs.ref == '' }}
+      if: ${{ inputs.git-ref == '' }}
       uses: actions/checkout@v5
 
     - name: Install node
