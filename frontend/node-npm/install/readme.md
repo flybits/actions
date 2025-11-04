@@ -16,7 +16,7 @@ missed.
 | --- | --- | --- | --- |
 | `github-personal-access-token` | `true` | `N/A` | A token used for accessing private NPM packages (published by Flybits Inc.). |
 | `node-version` | `false` | `'lts/*'` | The version of Node to use (e.g., '18', 'lts/\*'). |
-| `ref` | `false` | `N/A` | The branch, tag, or SHA to check out. Defaults to the current workflow's ref. |
+| `git-ref` | `false` | `N/A` | The branch, tag, or SHA to check out. Defaults to the current workflow's ref. |
 | `notify-slack-on-failure` | `false` | `false` | Whether to notify a Slack channel if the job fails. |
 | `slack-bot-token` | `false` | `N/A` | A bot token to publish a message on Slack. |
 | `slack-ts` | `false` | `N/A` | The timestamp of the Slack message to reply to. |
@@ -48,6 +48,6 @@ jobs:
         github-personal-access-token: ${{ secrets.FE_GITHUB_PAT }}
         node-version: '18'
         notify-slack-on-failure: true
-        ref: ${{ github.head_ref }}
+        git-ref: ${{ github.head_ref }}
         slack-bot-token: ${{ secrets.FE_SLACK_BOT_TOKEN }}
         slack-ts: ${{ needs.slack-notify-start.outputs.ts }}
