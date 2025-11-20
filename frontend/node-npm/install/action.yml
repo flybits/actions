@@ -43,13 +43,13 @@ runs:
 
     - name: Checkout the repository (specific ref)
       if: ${{ inputs.git-ref != '' }}
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
       with:
         ref: ${{ inputs.git-ref }}
 
     - name: Checkout the repository (default ref)
       if: ${{ inputs.git-ref == '' }}
-      uses: actions/checkout@v5
+      uses: actions/checkout@v6
 
     - name: Install node
       uses: actions/setup-node@v6
