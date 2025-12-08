@@ -2,10 +2,6 @@ name: "Verify pull request's title"
 description: 'Enforces that the title of a pull request must follow the Conventional Commits format'
 
 inputs:
-  additional-scopes:
-    description: 'A pipe-separated list of additional scopes to allow (e.g., "scope1|scope2").'
-    required: false
-    default: ''
   additional-types:
     description: 'A pipe-separated list of additional types to allow (e.g., "type1|type2").'
     required: false
@@ -14,6 +10,10 @@ inputs:
     description: 'A pipe-separated list of allowed Jira project keys (e.g., "PROJ|TEST").'
     required: false
     default: 'PET'
+  scopes:
+    description: 'A pipe-separated list of additional scopes to allow (e.g., "scope1|scope2").'
+    required: false
+    default: ''
 
 runs:
   using: 'composite'
