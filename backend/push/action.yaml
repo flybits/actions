@@ -124,8 +124,8 @@ runs:
 
           try_commit_push () {
             if [ -z "$(git status --porcelain)" ]; then
-              echo "No changes detected after kustomize edit. Nothing to commit."
-              break
+              echo "No changes detected after kustomize edit. Image tag $TAG is already set correctly in GitOps. Nothing to commit."
+              return 0
             fi
 
             git add . # Stage all changes, including the kustomize modification
