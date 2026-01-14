@@ -102,14 +102,14 @@ runs:
         docker image save --output ${{ env.DOCKERIMAGEFILE }} $TAG
 
     #Save Artifact for Push Docker Job
-    - uses: actions/upload-artifact@v5
+    - uses: actions/upload-artifact@v6
       with:
         name: ${{ env.DOCKERVARNAME }}
         path: ${{ env.DOCKERIMAGEFILE }}
         retention-days: 5
     
     #Save Artifact for Push Docker Job
-    - uses: actions/upload-artifact@v5
+    - uses: actions/upload-artifact@v6
       with:
         name: ${{ env.VERSIONFILENAME }}
         path: ${{ env.VERSIONFILE }}
