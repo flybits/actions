@@ -1,0 +1,56 @@
+name: "Update Github Secret"
+description: "Updates a GitHub environment or repository secret"
+
+inputs:
+  environment:
+    required: false
+    default: ""
+  github_token:
+    required: true
+  secret_name:
+    required: true
+  secret_value:
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Update secret
+      shell: bash
+      env:
+        ENVIRONMENT: ${{ inputs.environment }}
+        GH_REPO: ${{ github.repository }}
+        GH_TOKEN: ${{ inputs.github_token }}
+        SECRET_NAME: ${{ inputs.secret_name }}
+        SECRET_VALUE: ${{ inputs.secret_value }}
+      run: |
+        set -euo pipefail
+
+        if [[ ! "$SECRET_NAME" =~ ^[A-Z0-9_]+$ ]]; then
+          echo "::error:: Invalid secret name '$SECRET_NAME'. Secrets must be alphanumeric + underscores."
+          exit 1
+        fi
+
+        if [ -n "$ENVIRONMENT" ]; then
+          MSG="Updating environment secret: **$SECRET_NAME** in **$ENVIRONMENT**"
+          CMD_ARGS=("--env" "$ENVIRONMENT")
+          SCOPE="environment (**$ENVIRONMENT**)"
+        else
+          MSG="Updating repository secret: **$SECRET_NAME**"
+          CMD_ARGS=()
+          SCOPE="repository"
+        fi
+
+        echo "$MSG"
+
+        # Use Heredoc to safely pass secret_value via stdin to gh CLI
+        # This is more secure than piping 'echo'
+        gh secret set "$SECRET_NAME" --repo "$GH_REPO" "${CMD_ARGS[@]}" <<EOF
+        $SECRET_VALUE
+        EOF
+
+        {
+          echo "### ✅ Secret Updated"
+          echo "The secret **$SECRET_NAME** was successfully updated in the **$SCOPE** scope."
+          echo "Repository: \`$GH_REPO\`"
+        } >> $GITHUB_STEP_SUMMARY
