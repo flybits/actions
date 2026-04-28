@@ -79,11 +79,44 @@ runs:
         echo "::error:: Failed to refresh Flybits project jwt after 3 attempts."
         exit 1
 
-    - name: Update Secret
+    - name: Update GitHub secret
       if: steps.refresh_project_jwt.outputs.new_project_jwt != ''
-      uses: flybits/frontend-github-actions/general/update-github-secret@main
-      with:
-        environment: ${{ inputs.github_environment }}
-        github_token: ${{ inputs.github_token }}
-        secret_name: ${{ inputs.secret_name }}
-        secret_value: ${{ steps.refresh_project_jwt.outputs.new_project_jwt }}
+      shell: bash
+      env:
+        ENVIRONMENT: ${{ inputs.github_environment }}
+        GH_REPO: ${{ github.repository }}
+        GH_TOKEN: ${{ inputs.github_token }}
+        SECRET_NAME: ${{ inputs.secret_name }}
+        SECRET_VALUE: ${{ steps.refresh_project_jwt.outputs.new_project_jwt }}
+      run: |
+        set -euo pipefail
+
+        if [[ ! "$SECRET_NAME" =~ ^[A-Z0-9_]+$ ]]; then
+          echo "::error:: Invalid secret name '$SECRET_NAME'. Secrets must be alphanumeric + underscores."
+          exit 1
+        fi
+
+        if [[ "$SECRET_NAME" != "FLYBITS_PROJECT_TOKEN" ]]; then
+          echo "::error:: Security Violation: This action is only authorized to update FLYBITS_PROJECT_TOKEN."
+          exit 1
+        fi
+
+        if [ -n "$ENVIRONMENT" ]; then
+          echo "Updating environment secret: $SECRET_NAME in environment: $ENVIRONMENT"
+          CMD_ARGS=("--env" "$ENVIRONMENT")
+          SCOPE="environment (**$ENVIRONMENT**)"
+        else
+          echo "Updating repository secret: $SECRET_NAME"
+          CMD_ARGS=()
+          SCOPE="repository"
+        fi
+
+        # Putting it here ensures the $SECRET_VALUE is passed via stdin,
+        # not as a command argument, preventing it from appearing in process logs.
+        gh secret set "$SECRET_NAME" --repo "$GH_REPO" "${CMD_ARGS[@]}" <<EOF
+        $SECRET_VALUE
+        EOF
+
+        {
+          echo "The secret was successfully updated in the **$SCOPE** scope."
+        } >> $GITHUB_STEP_SUMMARY
