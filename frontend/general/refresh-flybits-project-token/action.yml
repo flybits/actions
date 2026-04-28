@@ -113,9 +113,10 @@ runs:
 
         # Putting it here ensures the $SECRET_VALUE is passed via stdin,
         # not as a command argument, preventing it from appearing in process logs.
-        gh secret set "$SECRET_NAME" --repo "$GH_REPO" "${CMD_ARGS[@]}" <<EOF
-        $SECRET_VALUE
-        EOF
+        # Flush to the left to prevent leading whitespace injection
+        gh secret set "$SECRET_NAME" --repo "$GH_REPO" "${CMD_ARGS[@]}" <<-EOF
+$SECRET_VALUE
+EOF
 
         {
           echo "The secret was successfully updated in the **$SCOPE** scope."
