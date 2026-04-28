@@ -115,8 +115,8 @@ runs:
         # not as a command argument, preventing it from appearing in process logs.
         # Flush to the left to prevent leading whitespace injection
         gh secret set "$SECRET_NAME" --repo "$GH_REPO" "${CMD_ARGS[@]}" <<-EOF
-$SECRET_VALUE
-EOF
+        $SECRET_VALUE
+        EOF
 
         {
           echo "The secret was successfully updated in the **$SCOPE** scope."
