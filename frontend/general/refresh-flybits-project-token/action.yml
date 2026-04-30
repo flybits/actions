@@ -1,4 +1,4 @@
-name: "Update Flybits Project Token"
+name: "Refresh Flybits Project Token"
 description: "Refreshes Flybits project token and updates the Github secret"
 
 inputs:
