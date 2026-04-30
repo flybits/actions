@@ -11,8 +11,6 @@ inputs:
     default: ""
   github_token:
     required: true
-  secret_name:
-    required: true
 
 runs:
   using: "composite"
@@ -86,20 +84,11 @@ runs:
         ENVIRONMENT: ${{ inputs.github_environment }}
         GH_REPO: ${{ github.repository }}
         GH_TOKEN: ${{ inputs.github_token }}
-        SECRET_NAME: ${{ inputs.secret_name }}
         SECRET_VALUE: ${{ steps.refresh_project_jwt.outputs.new_project_jwt }}
       run: |
         set -euo pipefail
 
-        if [[ ! "$SECRET_NAME" =~ ^[A-Z0-9_]+$ ]]; then
-          echo "::error:: Invalid secret name '$SECRET_NAME'. Secrets must be alphanumeric + underscores."
-          exit 1
-        fi
-
-        if [[ "$SECRET_NAME" != "FLYBITS_PROJECT_TOKEN" ]]; then
-          echo "::error:: Security Violation: This action is only authorized to update FLYBITS_PROJECT_TOKEN."
-          exit 1
-        fi
+        SECRET_NAME=FLYBITS_PROJECT_TOKEN
 
         if [ -n "$ENVIRONMENT" ]; then
           echo "Updating environment secret: $SECRET_NAME in environment: $ENVIRONMENT"
