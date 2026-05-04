@@ -86,7 +86,7 @@ runs:
 
     - name: Send message to Slack
       id: send_slack_message
-      uses: slackapi/slack-github-action@v2.1.1
+      uses: slackapi/slack-github-action@v3.0.3
       with:
         method: 'chat.postMessage'
         token: ${{ inputs.slack-bot-token }}
@@ -132,7 +132,7 @@ runs:
 
     - name: Add reaction to the message
       id: add_reaction
-      uses: slackapi/slack-github-action@v2.1.1
+      uses: slackapi/slack-github-action@v3.0.3
       with:
         method: 'reactions.add'
         token: ${{ inputs.slack-bot-token }}
