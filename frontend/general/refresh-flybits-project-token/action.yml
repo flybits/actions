@@ -1,0 +1,112 @@
+name: "Refresh Flybits Project Token"
+description: "Refreshes Flybits project token and updates the Github secret"
+
+inputs:
+  flybits_project_environment:
+    required: true
+  flybits_project_jwt:
+    required: true
+  github_environment:
+    required: false
+    default: ""
+  github_token:
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Refresh Flybits project jwt
+      id: refresh_project_jwt
+      shell: bash
+      env:
+        FLYBITS_PROJECT_JWT: ${{ inputs.flybits_project_jwt }}
+        FLYBITS_PROJECT_ENVIRONMENT: ${{ inputs.flybits_project_environment }}
+      run: |
+        set -euo pipefail
+
+        ENVIRONMENT="${FLYBITS_PROJECT_ENVIRONMENT,,}"
+
+        case "$ENVIRONMENT" in
+          development) DOMAIN="api.development.flybits.com" ;;
+          staging)     DOMAIN="api.staging.flybits.com"     ;;
+          *)
+            echo "Error: Unsupported environment '$FLYBITS_PROJECT_ENVIRONMENT'"
+            exit 1
+            ;;
+        esac
+
+        API_URL="https://${DOMAIN}/sso/auth/refreshToken"
+
+        for i in {1..3}; do
+          echo "Attempt $i - Calling Flybits api ($API_URL)..."
+          
+          HTTP_STATUS=$(curl -s -S -o body.txt -D headers.txt \
+            --connect-timeout 10 \
+            --location "$API_URL" \
+            --header "X-Authorization: $FLYBITS_PROJECT_JWT" \
+            -w "%{http_code}")
+
+          NEW_PROJECT_JWT=$(grep -i "x-authorization:" headers.txt | tail -n 1 | awk '{print $2}' | tr -d '[:space:]' || true)
+          REQUEST_ID=$(grep -i "x-request-id:" headers.txt | tail -n 1 | awk '{print $2}' | tr -d '[:space:]' || true)
+
+          if [[ "$HTTP_STATUS" =~ ^(200|201)$ ]] && [[ -z "$NEW_PROJECT_JWT" ]]; then
+             echo "::warning:: Status $HTTP_STATUS received but X-Authorization header was empty."
+          fi
+
+          if [[ "$HTTP_STATUS" =~ ^(200|201)$ ]] && [[ -n "$NEW_PROJECT_JWT" ]]; then
+            echo "::add-mask::$NEW_PROJECT_JWT"
+            echo "new_project_jwt=$NEW_PROJECT_JWT" >> $GITHUB_OUTPUT
+            echo "Success: Flybits project JWT refreshed."
+            exit 0
+          fi
+
+          echo "::warning:: Attempt $i failed (Status: $HTTP_STATUS, Request ID: $REQUEST_ID)"
+          [ -f body.txt ] && cat body.txt
+
+          if [[ "$HTTP_STATUS" == "401" ]]; then
+             echo "::error:: Invalid Flybits project JWT. Check your inputs."
+             exit 1
+          fi
+
+          if [ $i -lt 3 ]; then
+            echo "Retrying in 10 seconds..."
+            sleep 10
+          fi
+        done
+
+        echo "::error:: Failed to refresh Flybits project jwt after 3 attempts."
+        exit 1
+
+    - name: Update GitHub secret
+      if: steps.refresh_project_jwt.outputs.new_project_jwt != ''
+      shell: bash
+      env:
+        ENVIRONMENT: ${{ inputs.github_environment }}
+        GH_REPO: ${{ github.repository }}
+        GH_TOKEN: ${{ inputs.github_token }}
+        SECRET_VALUE: ${{ steps.refresh_project_jwt.outputs.new_project_jwt }}
+      run: |
+        set -euo pipefail
+
+        SECRET_NAME=FLYBITS_PROJECT_TOKEN
+
+        if [ -n "$ENVIRONMENT" ]; then
+          echo "Updating environment secret: $SECRET_NAME in environment: $ENVIRONMENT"
+          CMD_ARGS=("--env" "$ENVIRONMENT")
+          SCOPE="environment (**$ENVIRONMENT**)"
+        else
+          echo "Updating repository secret: $SECRET_NAME"
+          CMD_ARGS=()
+          SCOPE="repository"
+        fi
+
+        # Putting it here ensures the $SECRET_VALUE is passed via stdin,
+        # not as a command argument, preventing it from appearing in process logs.
+        # Flush to the left to prevent leading whitespace injection
+        gh secret set "$SECRET_NAME" --repo "$GH_REPO" "${CMD_ARGS[@]}" <<-EOF
+        $SECRET_VALUE
+        EOF
+
+        {
+          echo "The secret was successfully updated in the **$SCOPE** scope."
+        } >> $GITHUB_STEP_SUMMARY
