@@ -39,6 +39,8 @@ runs:
       shell: bash
     - name: Run govulncheck
       run: govulncheck ./...
+      env:
+        GOEXPERIMENT: jsonv2
       shell: bash
     - name: Send data to Slack If Failure
       if: inputs.slack_webhook_url != '' && failure()
