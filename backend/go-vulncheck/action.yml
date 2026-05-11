@@ -14,6 +14,10 @@ inputs:
   show_success_slack_msg:
     description: indicates that all failures and successes should be displayed in slack, otherwise only failures will appear
     required: true
+  path:
+    description: The path/package pattern to run govulncheck against (e.g. ./... or ./pkg/...). Defaults to ./...
+    required: false
+    default: './...'
 runs:
   using: "composite"
   steps:
@@ -38,7 +42,7 @@ runs:
       run: go version -m /home/runner/go/bin/govulncheck
       shell: bash
     - name: Run govulncheck
-      run: govulncheck ./...
+      run: govulncheck ${{ inputs.path }}
       shell: bash
     - name: Send data to Slack If Failure
       if: inputs.slack_webhook_url != '' && failure()
