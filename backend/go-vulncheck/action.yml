@@ -15,9 +15,9 @@ inputs:
     description: indicates that all failures and successes should be displayed in slack, otherwise only failures will appear
     required: true
   path:
-    description: The path/package pattern to run govulncheck against (e.g. ./... or ./pkg/...). Defaults to ./...
+    description: The directory to run govulncheck from (e.g. ./backend). Defaults to the repository root.
     required: false
-    default: './...'
+    default: '.'
 runs:
   using: "composite"
   steps:
@@ -42,7 +42,7 @@ runs:
       run: go version -m /home/runner/go/bin/govulncheck
       shell: bash
     - name: Run govulncheck
-      run: govulncheck ${{ inputs.path }}
+      run: govulncheck -C ${{ inputs.path }} ./...
       shell: bash
     - name: Send data to Slack If Failure
       if: inputs.slack_webhook_url != '' && failure()
