@@ -3,86 +3,87 @@ description: Installs node and project's packages; restore from cache if possibl
 
 inputs:
   git-ref:
-    description: 'The branch, tag or SHA to check out.'
+    description: "The branch, tag or SHA to check out."
     required: false
 
   github-personal-access-token:
-    description: 'A token used for accessing private NPM packages (published by Flybits Inc.)'
+    description: "A token used for accessing private NPM packages (published by Flybits Inc.)"
     required: true
 
   node-version:
-    description: 'The version of Node to use'
-    default: 'lts/*'
+    description: "The version of Node to use"
+    default: "lts/*"
+    required: false
+
+  package-manager:
+    description: "The package manager to use ('npm' or 'yarn')"
+    default: "yarn"
     required: false
 
   notify-slack-on-failure:
-    description: 'Whether to notify a Slack channel if the job fails'
+    description: "Whether to notify a Slack channel if the job fails"
     default: false
     required: false
 
   slack-bot-token:
-    description: 'A bot token to publish a message on Slack'
+    description: "A bot token to publish a message on Slack"
     required: false
 
   slack-ts:
-    description: 'The timestamp of the Slack message'
+    description: "The timestamp of the Slack message"
     required: false
 
   web-app-name:
-    description: 'A human-readable name of your web application'
+    description: "A human-readable name of your web application"
     default: ${{ github.event.repository.name }}
     required: false
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Validate Github Actions' inputs
       shell: bash
+      env:
+        GITHUB_PAT: ${{ inputs.github-personal-access-token }}
       run: |
-        [[ "${{ inputs.github-personal-access-token }}" ]] || { echo "github-personal-access-token input is empty"; exit 1; }
+        [[ "${GITHUB_PAT}" ]] || { echo "github-personal-access-token input is empty"; exit 1; }
 
-    - name: Checkout the repository (specific ref)
-      if: ${{ inputs.git-ref != '' }}
+    - name: Checkout the repository
       uses: actions/checkout@v6
       with:
         ref: ${{ inputs.git-ref }}
 
-    - name: Checkout the repository (default ref)
-      if: ${{ inputs.git-ref == '' }}
-      uses: actions/checkout@v6
-
-    - name: Install node
+    - name: Install Node and setup cache
       uses: actions/setup-node@v6
       with:
+        cache: ${{ inputs.package-manager }}
         node-version: ${{ inputs.node-version }}
-        cache: 'npm'
-
-    - name: Restore packages from cache
-      id: node-modules
-      uses: actions/cache@v5
-      with:
-        path: node_modules
-        key: ${{ runner.os }}-xnode-modules-${{ hashFiles('yarn.lock') }}
 
     - name: Generate .npmrc file
-      if: steps.node-modules.outputs.cache-hit != 'true'
       shell: bash
+      env:
+        GITHUB_PAT: ${{ inputs.github-personal-access-token }}
       run: |
         NPMRC_FILE=".npmrc"
-        rm -f $NPMRC_FILE
-        echo "@flybits:registry=https://npm.pkg.github.com" >> $NPMRC_FILE
-        echo "https://npm.pkg.github.com/:_authToken=${{ inputs.github-personal-access-token }}" >> $NPMRC_FILE
+        rm -f "$NPMRC_FILE"
+        echo "@flybits:registry=https://npm.pkg.github.com" >> "$NPMRC_FILE"
+        echo "https://npm.pkg.github.com/:_authToken=${GITHUB_PAT}" >> "$NPMRC_FILE"
 
-    - name: Install packages
-      if: steps.node-modules.outputs.cache-hit != 'true'
+    - name: Install packages via NPM
+      if: ${{ inputs.package-manager == 'npm' }}
+      shell: bash
+      run: npm ci
+
+    - name: Install packages via Yarn
+      if: ${{ inputs.package-manager == 'yarn' }}
       shell: bash
       run: yarn install --frozen-lockfile
 
-    - if: ${{ inputs.notify-slack-on-failure == 'true' && failure() }}
-      name: Notify Slack
-      uses: flybits/actions/frontend/slack/job-failure@main
+    - name: Notify Slack
+      if: ${{ failure() && inputs.notify-slack-on-failure == 'true' }}
+      uses: flybits/actions/frontend/slack/job-message@main
       with:
         bot-token: ${{ inputs.slack-bot-token }}
-        message: '😤 Installing Node or NPM packages failed'
+        message: "😤 Installing Node or NPM packages failed"
         thread-ts: ${{ inputs.slack-ts }}
         web-app-name: ${{ inputs.web-app-name }}
