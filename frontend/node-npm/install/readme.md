@@ -1,4 +1,4 @@
-# flybits/actions/frontend/node-and-npm/install
+# flybits/actions/frontend/node-npm/install
 
 This GitHub Action installs a specified Node.js version and project dependencies using either **Yarn** or **NPM**. It is optimized for speed by utilizing native global package caching. Dependencies are securely fetched and restored automatically based on your project's lockfile (`yarn.lock` or `package-lock.json`).
 
@@ -30,7 +30,7 @@ If your project uses the repository's default branch, the latest LTS version of 
 ```yaml
 steps:
   - name: Install Node and Yarn packages
-    uses: flybits/actions/frontend/node-and-npm/install@main
+    uses: flybits/actions/frontend/node-npm/install@main
     with:
       github-personal-access-token: ${{ secrets.FE_GITHUB_PAT }}
 ```
@@ -42,7 +42,7 @@ If your project relies on NPM instead of the default Yarn configuration, pass 'n
 ```yaml
 steps:
   - name: Install Node and NPM packages
-    uses: flybits/actions/frontend/node-and-npm/install@main
+    uses: flybits/actions/frontend/node-npm/install@main
     with:
       github-personal-access-token: ${{ secrets.FE_GITHUB_PAT }}
       package-manager: "npm"
@@ -64,7 +64,7 @@ jobs:
     name: Build
     steps:
       - name: Install Node and Yarn packages
-        uses: flybits/actions/frontend/node-and-npm/install@main
+        uses: flybits/actions/frontend/node-npm/install@main
         with:
           github-personal-access-token: ${{ secrets.FE_GITHUB_PAT }}
           node-version: "22"
