@@ -48,7 +48,7 @@ runs:
         PACKAGE_MANAGER: ${{ inputs.package-manager }}
       run: |
         [[ "${GITHUB_PAT}" ]] || { echo "github-personal-access-token input is empty"; exit 1; }
-        
+
         case "${PACKAGE_MANAGER}" in
           npm|yarn) ;;
           *) echo "package-manager input must be 'npm' or 'yarn', got '${PACKAGE_MANAGER}'"; exit 1;;
