@@ -85,6 +85,11 @@ runs:
       shell: bash
       run: yarn install --frozen-lockfile
 
+    - name: Remove .npmrc file
+      if: always()
+      shell: bash
+      run: rm -f .npmrc
+
     - name: Notify Slack
       if: ${{ failure() && inputs.notify-slack-on-failure == 'true' }}
       uses: flybits/actions/frontend/slack/job-message@main
