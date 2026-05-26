@@ -1,5 +1,5 @@
-name: Install Node and NPM packages
-description: Installs node and project's packages; restore from cache if possible
+name: Install project dependencies
+description: Set up Node.js and install project dependencies using npm or Yarn
 
 inputs:
   git-ref:
@@ -92,9 +92,9 @@ runs:
 
     - name: Notify Slack
       if: ${{ failure() && inputs.notify-slack-on-failure == 'true' }}
-      uses: flybits/actions/frontend/slack/job-message@main
+      uses: flybits/actions/frontend/slack/job-message@a12504a2cd43938365dac26efe49382a6b3ef0f0
       with:
         bot-token: ${{ inputs.slack-bot-token }}
-        message: "😤 Installing Node or NPM packages failed"
+        message: "😤 Installing project dependencies failed"
         thread-ts: ${{ inputs.slack-ts }}
         web-app-name: ${{ inputs.web-app-name }}
