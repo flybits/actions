@@ -181,7 +181,7 @@ runs:
           echo "Staging release..."
           BRANCH=main
           git checkout $BRANCH
-          cd env/staging
+          cd env/demo
 
         elif [[ ${{ inputs.type }} == "production" ]]; then
           echo "Production release..."
