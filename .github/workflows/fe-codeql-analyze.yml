@@ -29,11 +29,6 @@ jobs:
         with:
           languages: 'javascript-typescript'
 
-      - name: Force a failure for testing
-        run: |
-          echo "This is a test failure"
-          exit 1
-
       - name: Perform CodeQL analysis
         uses: github/codeql-action/analyze@v4
 
