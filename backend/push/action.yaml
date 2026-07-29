@@ -131,23 +131,41 @@ runs:
             git add . # Stage all changes, including the kustomize modification
             git commit -m "Auto-release $TAG" || { echo "Commit failed. Exiting."; return 1; }
 
-            #Max re-tries is 4
-            for i in {1..4}; do
-              echo "Attempting to push (attempt $i)..."
+            # Every service pipeline writes gitops main, so a rejected push is normal
+            # under load rather than an error. Sleep first and rebase immediately before
+            # the retry: rebasing and then sleeping leaves the refreshed base stale for
+            # the whole sleep, so the next push is rejected again at any real concurrency.
+            MAX_ATTEMPTS=10
+            pushed=false
+            for i in $(seq 1 $MAX_ATTEMPTS); do
+              echo "Attempting to push (attempt $i/$MAX_ATTEMPTS)..."
               if git push origin $BRANCH; then
                 echo "Upload Success"
+                pushed=true
                 break
-              else
-                echo "Pulling latest changes from remote..."
-                git pull --rebase origin $BRANCH
-                SLEEP_TIME=$((RANDOM % 11 + 5))  # Generates a random number between 5 and 15
-                echo "Upload failed, retrying attempt $i in $SLEEP_TIME seconds..."
-                sleep $SLEEP_TIME
+              fi
+
+              SLEEP_TIME=$((RANDOM % 6 + 2))  # 2-7s, jittered so runners do not retry in lockstep
+              echo "Push rejected, retrying in $SLEEP_TIME seconds..."
+              sleep $SLEEP_TIME
+
+              echo "Rebasing onto latest origin/$BRANCH..."
+              if ! git pull --rebase origin $BRANCH; then
+                echo "ERROR: rebase failed for $TAG. GitOps was NOT updated."
+                git rebase --abort || true
+                return 1
               fi
             done
+
+            # Without this the loop falls through on exhaustion and the step exits 0,
+            # reporting success while the Auto-release commit is discarded with the runner.
+            if [ "$pushed" != true ]; then
+              echo "ERROR: exhausted $MAX_ATTEMPTS push attempts for $TAG. GitOps was NOT updated."
+              return 1
+            fi
           }
-          
-          try_commit_push
+
+          try_commit_push || exit 1
         }
         
         BRANCH=main
