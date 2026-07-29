@@ -54,7 +54,14 @@ runs:
     - name: Update Version of Docker Image
       shell: bash
       run: |
+        if [[ ! -f VERSION ]]; then
+          echo "VERSION ERROR: VERSION file not found in repository root."
+          exit 1
+        fi
+
         VERSION=$(cat VERSION)
+        [[ "$VERSION" =~ ^[0-9]+.[0-9]+.[0-9]+-[0-9]$ ]] || { echo "VERSION FILE ERROR: INVALID FORMAT! Expected format: 1.2.3-0" ; exit 1; }
+
         if [[ ${{ inputs.type }} == "dev" ]]; then
           SUFFIX="-$(git rev-parse --short HEAD)"
           SUFFIX+=".dev"

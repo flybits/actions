@@ -1,6 +1,5 @@
-name: Run Unit Tests
-author: Petar Kramaric
-description: GitHub action for building backend docker images
+name: Push Docker Image to GitOps
+description: GitHub action for pushing docker images to GitOps repositories
 inputs:
   github_token:
     description: A GitHub personal access token with repo scope to access private repositories.
@@ -27,13 +26,23 @@ inputs:
   branch:
     description: Which branch is running the job
     required: true
+  gitops_repo:
+    description: "Target GitOps repository for deployment"
+    required: false
+    default: gitops
+    options:
+      - gitops
+      - gitops-solutions
   type:
-    description: "Which server are we deploying to"
-    required: true
+    description: "Which server are we deploying to. Required when gitops_repo is gitops."
+    required: false
     options:
       - dev
       - staging
       - production
+  project_name:
+    description: "GitOps Solutions project directory name under base/. Required when gitops_repo is gitops-solutions."
+    required: false
 
 runs:
   using: "composite"
@@ -48,8 +57,27 @@ runs:
     - name: Inputs validation
       shell: bash
       run: |
-        if [[ ${{ inputs.type }} == "production" || ${{ inputs.type }} == "staging" ]]; then
-          [[ "${{ inputs.branch }}" =~ ^(main)$ ]] || { echo "BRANCH ERROR: This pipeline it's only available for main branch!" ; exit 1; }
+        if [[ "${{ inputs.gitops_repo }}" != "gitops" && "${{ inputs.gitops_repo }}" != "gitops-solutions" ]]; then
+          echo "GITOPS_REPO ERROR: Unrecognized gitops_repo '${{ inputs.gitops_repo }}'. Must be 'gitops' or 'gitops-solutions'."
+          exit 1
+        fi
+
+        if [[ "${{ inputs.gitops_repo }}" == "gitops" ]]; then
+          if [[ -z "${{ inputs.type }}" ]]; then
+            echo "TYPE ERROR: type is required when deploying to gitops."
+            exit 1
+          fi
+
+          if [[ ${{ inputs.type }} == "production" || ${{ inputs.type }} == "staging" ]]; then
+            [[ "${{ inputs.branch }}" =~ ^(main)$ ]] || { echo "BRANCH ERROR: This pipeline it's only available for main branch!" ; exit 1; }
+          fi
+        fi
+
+        if [[ "${{ inputs.gitops_repo }}" == "gitops-solutions" ]]; then
+          if [[ -z "${{ inputs.project_name }}" ]]; then
+            echo "PROJECT_NAME ERROR: project_name is required when deploying to gitops-solutions."
+            exit 1
+          fi
         fi
 
     #Setup SSH Keys
@@ -106,10 +134,13 @@ runs:
 
     #Push To GitOps
     - name: Push To GitOps
+      if: inputs.gitops_repo == 'gitops'
       shell: bash
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       run: |
+        source "${{ github.action_path }}/scripts/try_commit_push.sh"
+
         echo "IMAGE: $TAG"
         
         git config --global user.name "flybitsbot"
@@ -121,51 +152,7 @@ runs:
         
         update_image_and_push () {
           kustomize edit set image $TAG
-
-          try_commit_push () {
-            if [ -z "$(git status --porcelain)" ]; then
-              echo "No changes detected after kustomize edit. Image tag $TAG is already set correctly in GitOps. Nothing to commit."
-              return 0
-            fi
-
-            git add . # Stage all changes, including the kustomize modification
-            git commit -m "Auto-release $TAG" || { echo "Commit failed. Exiting."; return 1; }
-
-            # Every service pipeline writes gitops main, so a rejected push is normal
-            # under load rather than an error. Sleep first and rebase immediately before
-            # the retry: rebasing and then sleeping leaves the refreshed base stale for
-            # the whole sleep, so the next push is rejected again at any real concurrency.
-            MAX_ATTEMPTS=10
-            pushed=false
-            for i in $(seq 1 $MAX_ATTEMPTS); do
-              echo "Attempting to push (attempt $i/$MAX_ATTEMPTS)..."
-              if git push origin $BRANCH; then
-                echo "Upload Success"
-                pushed=true
-                break
-              fi
-
-              SLEEP_TIME=$((RANDOM % 6 + 2))  # 2-7s, jittered so runners do not retry in lockstep
-              echo "Push rejected, retrying in $SLEEP_TIME seconds..."
-              sleep $SLEEP_TIME
-
-              echo "Rebasing onto latest origin/$BRANCH..."
-              if ! git pull --rebase origin $BRANCH; then
-                echo "ERROR: rebase failed for $TAG. GitOps was NOT updated."
-                git rebase --abort || true
-                return 1
-              fi
-            done
-
-            # Without this the loop falls through on exhaustion and the step exits 0,
-            # reporting success while the Auto-release commit is discarded with the runner.
-            if [ "$pushed" != true ]; then
-              echo "ERROR: exhausted $MAX_ATTEMPTS push attempts for $TAG. GitOps was NOT updated."
-              return 1
-            fi
-          }
-
-          try_commit_push || exit 1
+          try_commit_push "$TAG" "$BRANCH" "GitOps" 10 || exit 1
         }
         
         BRANCH=main
@@ -212,8 +199,39 @@ runs:
 
         # unrecognized tag
         else
-          echo "ERROR: Unrecognized tag $TAG. Skipping"
-          exit 0
+          echo "ERROR: Unrecognized type ${{ inputs.type }}. Skipping"
+          exit 1
         fi
 
         update_image_and_push
+
+    #Push To GitOps Solutions
+    - name: Push To GitOps Solutions
+      if: inputs.gitops_repo == 'gitops-solutions'
+      shell: bash
+      env:
+        SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+      run: |
+        source "${{ github.action_path }}/scripts/try_commit_push.sh"
+
+        echo "IMAGE: $TAG"
+        
+        git config --global user.name "flybitsbot"
+        git config --global user.email "dev@flybits.com"
+        
+        mkdir git
+        cd git
+        git clone git@github.com:flybits/gitops-solutions.git .
+
+        PROJECT_DIR="base/${{ inputs.project_name }}"
+        echo "PROJECT_DIR: $PROJECT_DIR"
+
+        if [ ! -f "$PROJECT_DIR/kustomization.yaml" ]; then
+          echo "ERROR: Kustomization file not found at $PROJECT_DIR/kustomization.yaml"
+          exit 1
+        fi
+
+        echo "Updating image in $PROJECT_DIR..."
+        cd "$PROJECT_DIR"
+        kustomize edit set image $TAG
+        try_commit_push "$TAG" "main" "GitOps Solutions" 4 || exit 1
