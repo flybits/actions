@@ -27,9 +27,16 @@ inputs:
   branch:
     description: Which branch is running the job
     required: true
+  gitops_repo:
+    description: "Target GitOps repository for deployment"
+    required: false
+    default: gitops
+    options:
+      - gitops
+      - gitops-solutions
   type:
-    description: "Which server are we deploying to"
-    required: true
+    description: "Which server are we deploying to. Required when gitops_repo is gitops."
+    required: false
     options:
       - dev
       - staging
@@ -48,8 +55,20 @@ runs:
     - name: Inputs validation
       shell: bash
       run: |
-        if [[ ${{ inputs.type }} == "production" || ${{ inputs.type }} == "staging" ]]; then
-          [[ "${{ inputs.branch }}" =~ ^(main)$ ]] || { echo "BRANCH ERROR: This pipeline it's only available for main branch!" ; exit 1; }
+        if [[ "${{ inputs.gitops_repo }}" != "gitops" && "${{ inputs.gitops_repo }}" != "gitops-solutions" ]]; then
+          echo "GITOPS_REPO ERROR: Unrecognized gitops_repo '${{ inputs.gitops_repo }}'. Must be 'gitops' or 'gitops-solutions'."
+          exit 1
+        fi
+
+        if [[ "${{ inputs.gitops_repo }}" == "gitops" ]]; then
+          if [[ -z "${{ inputs.type }}" ]]; then
+            echo "TYPE ERROR: type is required when deploying to gitops."
+            exit 1
+          fi
+
+          if [[ ${{ inputs.type }} == "production" || ${{ inputs.type }} == "staging" ]]; then
+            [[ "${{ inputs.branch }}" =~ ^(main)$ ]] || { echo "BRANCH ERROR: This pipeline it's only available for main branch!" ; exit 1; }
+          fi
         fi
 
     #Setup SSH Keys
