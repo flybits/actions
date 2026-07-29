@@ -40,6 +40,9 @@ inputs:
       - dev
       - staging
       - production
+  project_name:
+    description: "GitOps Solutions project directory name under base/. Required when gitops_repo is gitops-solutions."
+    required: false
 
 runs:
   using: "composite"
@@ -67,6 +70,13 @@ runs:
 
           if [[ ${{ inputs.type }} == "production" || ${{ inputs.type }} == "staging" ]]; then
             [[ "${{ inputs.branch }}" =~ ^(main)$ ]] || { echo "BRANCH ERROR: This pipeline it's only available for main branch!" ; exit 1; }
+          fi
+        fi
+
+        if [[ "${{ inputs.gitops_repo }}" == "gitops-solutions" ]]; then
+          if [[ -z "${{ inputs.project_name }}" ]]; then
+            echo "PROJECT_NAME ERROR: project_name is required when deploying to gitops-solutions."
+            exit 1
           fi
         fi
 
@@ -213,9 +223,7 @@ runs:
         cd git
         git clone git@github.com:flybits/gitops-solutions.git .
 
-        PROJECT_NAME=$(echo "${{ inputs.docker_repo }}" | cut -d'/' -f2)
-        PROJECT_DIR="base/$PROJECT_NAME"
-
+        PROJECT_DIR="base/${{ inputs.project_name }}"
         echo "PROJECT_DIR: $PROJECT_DIR"
 
         if [ ! -f "$PROJECT_DIR/kustomization.yaml" ]; then
