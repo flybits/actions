@@ -1,6 +1,5 @@
-name: Run Unit Tests
-author: Petar Kramaric
-description: GitHub action for building backend docker images
+name: Push Docker Image to GitOps
+description: GitHub action for pushing docker images to GitOps repositories
 inputs:
   github_token:
     description: A GitHub personal access token with repo scope to access private repositories.
