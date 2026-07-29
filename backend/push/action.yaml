@@ -125,6 +125,7 @@ runs:
 
     #Push To GitOps
     - name: Push To GitOps
+      if: inputs.gitops_repo == 'gitops'
       shell: bash
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
@@ -231,8 +232,8 @@ runs:
 
         # unrecognized tag
         else
-          echo "ERROR: Unrecognized tag $TAG. Skipping"
-          exit 0
+          echo "ERROR: Unrecognized type ${{ inputs.type }}. Skipping"
+          exit 1
         fi
 
         update_image_and_push
