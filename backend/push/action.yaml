@@ -195,3 +195,36 @@ runs:
         fi
 
         update_image_and_push
+
+    #Push To GitOps Solutions
+    - name: Push To GitOps Solutions
+      if: inputs.gitops_repo == 'gitops-solutions'
+      shell: bash
+      env:
+        SSH_AUTH_SOCK: /tmp/ssh_agent.sock
+      run: |
+        source "${{ github.action_path }}/scripts/try_commit_push.sh"
+
+        echo "IMAGE: $TAG"
+        
+        git config --global user.name "flybitsbot"
+        git config --global user.email "dev@flybits.com"
+        
+        mkdir git
+        cd git
+        git clone git@github.com:flybits/gitops-solutions.git .
+
+        PROJECT_NAME=$(echo "${{ inputs.docker_repo }}" | cut -d'/' -f2)
+        PROJECT_DIR="base/$PROJECT_NAME"
+
+        echo "PROJECT_DIR: $PROJECT_DIR"
+
+        if [ ! -f "$PROJECT_DIR/kustomization.yaml" ]; then
+          echo "ERROR: Kustomization file not found at $PROJECT_DIR/kustomization.yaml"
+          exit 1
+        fi
+
+        echo "Updating image in $PROJECT_DIR..."
+        cd "$PROJECT_DIR"
+        kustomize edit set image $TAG
+        try_commit_push "$TAG" "main" "GitOps Solutions" 4 || exit 1
