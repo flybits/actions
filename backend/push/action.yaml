@@ -130,6 +130,8 @@ runs:
       env:
         SSH_AUTH_SOCK: /tmp/ssh_agent.sock
       run: |
+        source "${{ github.action_path }}/scripts/try_commit_push.sh"
+
         echo "IMAGE: $TAG"
         
         git config --global user.name "flybitsbot"
@@ -141,51 +143,7 @@ runs:
         
         update_image_and_push () {
           kustomize edit set image $TAG
-
-          try_commit_push () {
-            if [ -z "$(git status --porcelain)" ]; then
-              echo "No changes detected after kustomize edit. Image tag $TAG is already set correctly in GitOps. Nothing to commit."
-              return 0
-            fi
-
-            git add . # Stage all changes, including the kustomize modification
-            git commit -m "Auto-release $TAG" || { echo "Commit failed. Exiting."; return 1; }
-
-            # Every service pipeline writes gitops main, so a rejected push is normal
-            # under load rather than an error. Sleep first and rebase immediately before
-            # the retry: rebasing and then sleeping leaves the refreshed base stale for
-            # the whole sleep, so the next push is rejected again at any real concurrency.
-            MAX_ATTEMPTS=10
-            pushed=false
-            for i in $(seq 1 $MAX_ATTEMPTS); do
-              echo "Attempting to push (attempt $i/$MAX_ATTEMPTS)..."
-              if git push origin $BRANCH; then
-                echo "Upload Success"
-                pushed=true
-                break
-              fi
-
-              SLEEP_TIME=$((RANDOM % 6 + 2))  # 2-7s, jittered so runners do not retry in lockstep
-              echo "Push rejected, retrying in $SLEEP_TIME seconds..."
-              sleep $SLEEP_TIME
-
-              echo "Rebasing onto latest origin/$BRANCH..."
-              if ! git pull --rebase origin $BRANCH; then
-                echo "ERROR: rebase failed for $TAG. GitOps was NOT updated."
-                git rebase --abort || true
-                return 1
-              fi
-            done
-
-            # Without this the loop falls through on exhaustion and the step exits 0,
-            # reporting success while the Auto-release commit is discarded with the runner.
-            if [ "$pushed" != true ]; then
-              echo "ERROR: exhausted $MAX_ATTEMPTS push attempts for $TAG. GitOps was NOT updated."
-              return 1
-            fi
-          }
-
-          try_commit_push || exit 1
+          try_commit_push "$TAG" "$BRANCH" "GitOps" 10 || exit 1
         }
         
         BRANCH=main
