@@ -234,4 +234,4 @@ runs:
         echo "Updating image in $PROJECT_DIR..."
         cd "$PROJECT_DIR"
         kustomize edit set image $TAG
-        try_commit_push "$TAG" "main" "GitOps Solutions" 4 || exit 1
+        try_commit_push "$TAG" "master" "GitOps Solutions" 4 || exit 1
