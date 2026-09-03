@@ -99,7 +99,7 @@ runs:
 
     #Increase Version Name NON-PATCH
     - name: Bump version major-minor
-      uses: HardNorth/github-version-generate@v1.4.0
+      uses: HardNorth/github-version-generate@v1.4.1
       if: inputs.version != 'patch'
       with:
         version-source: file
@@ -118,7 +118,7 @@ runs:
 
     #Increase Version Name PATCH
     - name: Generate versions
-      uses: HardNorth/github-version-generate@v1.4.0
+      uses: HardNorth/github-version-generate@v1.4.1
       with:
         version-source: file
         version-file: ${{ inputs.version_name_filepath }}

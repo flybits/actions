@@ -152,7 +152,7 @@ runs:
 
     #Figure out build number
     - name: Bump version major-minor
-      uses: HardNorth/github-version-generate@v1.4.0
+      uses: HardNorth/github-version-generate@v1.4.1
       with:
         version-source: file
         version-file: ${{ inputs.version_filepath }}
