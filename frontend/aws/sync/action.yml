@@ -3,68 +3,134 @@ description: Uploads the 'dist' folder to an S3 bucket and invalidates CloudFron
 
 inputs:
   aws-cloudfront-distribution-id:
-    description: 'The distribution ID of the CloudFront'
+    description: "The distribution ID of the CloudFront"
     required: true
 
   aws-iam-role:
-    description: 'The IAM role to assume'
+    description: "The IAM role to assume"
     required: true
 
   aws-s3-bucket-name:
-    description: 'The name of the S3 bucket'
+    description: "The name of the S3 bucket"
     required: true
 
   aws-s3-bucket-region:
-    description: 'The region of the S3 bucket'
+    description: "The region of the S3 bucket"
     required: true
 
+  aws-s3-cache-control:
+    description: "Cache control headers to apply during sync"
+    default: "public, max-age=0, must-revalidate"
+    required: false
+
   aws-s3-sync-delete:
-    description: 'Whether to delete files in the destination folder that are not present in the dist folder'
-    default: false
+    description: "Whether to delete files in the destination folder that are not present in the dist folder"
+    default: "false"
+    required: false
+
+  aws-s3-sync-delete-all:
+    description: "Whether to force-upload all files before deleting destination files that are not present in the dist folder"
+    default: "false"
     required: false
 
   aws-s3-sync-dryrun:
-    description: 'Whether to perform a dry run of the sync operation'
-    default: false
+    description: "Whether to perform a dry run of the sync operation"
+    default: "false"
     required: false
 
   dest-folder-name:
-    description: 'The name of the folder to copy files to'
+    description: "The name of the folder to copy files to"
     required: false
 
   dist-folder-name:
-    description: 'The name of the folder to sync with S3'
+    description: "The name of the folder to sync with S3"
     default: ${{ github.event.repository.name }}
     required: false
 
+  generate-build-json:
+    description: "Whether to generate a public build.json file containing deployment timestamps and the Git SHA"
+    default: "false"
+    required: false
+
   notify-slack-on-failure:
-    description: 'Whether to notify a Slack channel if the job fails'
-    default: false
+    description: "Whether to notify a Slack channel if the job fails"
+    default: "false"
     required: false
 
   slack-bot-token:
-    description: 'A bot token to publish a message on Slack'
+    description: "The bot token to publish a message on Slack"
     required: false
 
   slack-ts:
-    description: 'The timestamp of the Slack message'
+    description: "The timestamp of the Slack message"
     required: false
 
   web-app-name:
-    description: 'A human-readable name of your web application'
+    description: "The human-readable name of the web application"
     default: ${{ github.event.repository.name }}
     required: false
 
 runs:
-  using: 'composite'
+  using: "composite"
   steps:
     - name: Validate Github Actions' inputs
       shell: bash
+      env:
+        AWS_CLOUDFRONT_DISTRIBUTION_ID: ${{ inputs.aws-cloudfront-distribution-id }}
+        AWS_IAM_ROLE: ${{ inputs.aws-iam-role }}
+        AWS_S3_BUCKET_NAME: ${{ inputs.aws-s3-bucket-name }}
+        AWS_S3_BUCKET_REGION: ${{ inputs.aws-s3-bucket-region }}
+        AWS_S3_SYNC_DELETE: ${{ inputs.aws-s3-sync-delete }}
+        AWS_S3_SYNC_DELETE_ALL: ${{ inputs.aws-s3-sync-delete-all }}
+        AWS_S3_SYNC_DRYRUN: ${{ inputs.aws-s3-sync-dryrun }}
+        DIST_FOLDER_NAME: ${{ inputs.dist-folder-name }}
+        GENERATE_BUILD_JSON: ${{ inputs.generate-build-json }}
+        NOTIFY_SLACK_ON_FAILURE: ${{ inputs.notify-slack-on-failure }}
+        SLACK_BOT_TOKEN: ${{ inputs.slack-bot-token }}
       run: |
-        [[ "${{ inputs.aws-cloudfront-distribution-id }}" ]] || { echo "aws-cloudfront-distribution-id input is empty"; exit 1; }
-        [[ "${{ inputs.aws-iam-role }}" ]] || { echo "aws-iam-role input is empty"; exit 1; }
-        [[ "${{ inputs.aws-s3-bucket-name }}" ]] || { echo "aws-s3-bucket-name input is empty"; exit 1; }
-        [[ "${{ inputs.aws-s3-bucket-region }}" ]] || { echo "aws-s3-bucket-region input is empty"; exit 1; }
+        set -euo pipefail
+
+        missing=()
+        [ -n "$AWS_CLOUDFRONT_DISTRIBUTION_ID" ] || missing+=("aws-cloudfront-distribution-id")
+        [ -n "$AWS_IAM_ROLE" ] || missing+=("aws-iam-role")
+        [ -n "$AWS_S3_BUCKET_NAME" ] || missing+=("aws-s3-bucket-name")
+        [ -n "$AWS_S3_BUCKET_REGION" ] || missing+=("aws-s3-bucket-region")
+        [ -n "$DIST_FOLDER_NAME" ] || missing+=("dist-folder-name")
+
+        if [ "${#missing[@]}" -gt 0 ]; then
+          echo "::error::Missing required action inputs: ${missing[*]}."
+          exit 1
+        fi
+
+        for name in AWS_S3_SYNC_DELETE AWS_S3_SYNC_DELETE_ALL AWS_S3_SYNC_DRYRUN GENERATE_BUILD_JSON NOTIFY_SLACK_ON_FAILURE; do
+          case "${!name}" in
+            true|false) ;;
+            *)
+              echo "::error::Invalid boolean input '$name': received '${!name}'. Expected 'true' or 'false'."
+              exit 1
+              ;;
+          esac
+        done
+
+        if [ "$NOTIFY_SLACK_ON_FAILURE" = "true" ] && [ -z "$SLACK_BOT_TOKEN" ]; then
+          echo "::error::slack-bot-token is required when notify-slack-on-failure is true."
+          exit 1
+        fi
+
+        if [ ! -d "$DIST_FOLDER_NAME" ]; then
+          echo "::error::Distribution folder '$DIST_FOLDER_NAME' does not exist. Build the application before running this action."
+          exit 1
+        fi
+
+        if [ -n "$(find "$DIST_FOLDER_NAME" -type l -print -quit)" ]; then
+          echo "::error::Distribution folder '$DIST_FOLDER_NAME' contains symbolic links. Refusing to upload files outside the build directory."
+          exit 1
+        fi
+
+        if [ -z "$(find "$DIST_FOLDER_NAME" -type f -print -quit)" ]; then
+          echo "::error::Distribution folder '$DIST_FOLDER_NAME' contains no files. Refusing to deploy an empty build."
+          exit 1
+        fi
 
     - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v6
@@ -73,84 +139,134 @@ runs:
         aws-region: ${{ inputs.aws-s3-bucket-region }}
 
     - name: Generate build.json file
+      if: ${{ inputs.generate-build-json == 'true' }}
       shell: bash
+      env:
+        DIST_FOLDER_NAME: ${{ inputs.dist-folder-name }}
+        GIT_SHA: ${{ github.sha }}
       run: |
-        [ ! -d ${{ inputs.dist-folder-name }} ] && mkdir ${{ inputs.dist-folder-name }}
+        set -euo pipefail
 
-        echo "{
-          \"buildTimestamp\": \"$(date +%s)\",
-          \"buildTimestampEST\": \"$(TZ=America/Toronto date -Iseconds)\",
-          \"gitRef\": \"${{ github.ref_name }}\",
-          \"gitSha\": \"${{ github.sha }}\",
-          \"workflowActor\": \"${{ github.triggering_actor }}\",
-          \"workflowRunUrl\": \"${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}\",
-        }
-        " > ${{ inputs.dist-folder-name }}/build.json
-
-        if [ $? -ne 0 ]; then
-          echo "Failed to generate build.json file"
+        if ! command -v jq >/dev/null 2>&1; then
+          echo "::error::jq is required to generate build.json."
           exit 1
         fi
+
+        jq -n \
+          --arg buildTimestamp "$(date +%s)" \
+          --arg buildTimestampEST "$(TZ=EST date -Iseconds)" \
+          --arg gitSha "$GIT_SHA" \
+          '{
+            buildTimestamp: $buildTimestamp,
+            buildTimestampEST: $buildTimestampEST,
+            gitSha: $gitSha
+          }' > "$DIST_FOLDER_NAME/build.json"
 
     - name: Copy "dist" folder's contents to S3 bucket
       shell: bash
+      env:
+        AWS_S3_BUCKET_NAME: ${{ inputs.aws-s3-bucket-name }}
+        AWS_S3_CACHE_CONTROL: ${{ inputs.aws-s3-cache-control }}
+        AWS_S3_SYNC_DELETE: ${{ inputs.aws-s3-sync-delete }}
+        AWS_S3_SYNC_DELETE_ALL: ${{ inputs.aws-s3-sync-delete-all }}
+        AWS_S3_SYNC_DRYRUN: ${{ inputs.aws-s3-sync-dryrun }}
+        DEST_FOLDER_NAME: ${{ inputs.dest-folder-name }}
+        DIST_FOLDER_NAME: ${{ inputs.dist-folder-name }}
       run: |
-        SYNC_COMMAND="aws s3 sync ${{ inputs.dist-folder-name }} s3://${{ inputs.aws-s3-bucket-name }}"
+        set -euo pipefail
 
-        if [ -n "${{ inputs.dest-folder-name }}" ]; then
-          SYNC_COMMAND="aws s3 sync ${{ inputs.dist-folder-name }} s3://${{ inputs.aws-s3-bucket-name }}/${{ inputs.dest-folder-name }}"
+        print_command() {
+          printf "Executing command:"
+          printf " %q" "$@"
+          printf "\n"
+        }
+
+        DEST_PATH="s3://${AWS_S3_BUCKET_NAME}"
+
+        if [ -n "$DEST_FOLDER_NAME" ]; then
+          DEST_PATH="${DEST_PATH}/${DEST_FOLDER_NAME}"
         fi
 
-        if [ "${{ inputs.aws-s3-sync-delete }}" = "true" ]; then
-          SYNC_COMMAND="${SYNC_COMMAND} --delete"
-        fi
+        # Force-upload first so a failed transfer cannot leave the destination empty.
+        if [ "$AWS_S3_SYNC_DELETE_ALL" = "true" ]; then
+          echo "::notice::Force-uploading all files to '${DEST_PATH}/' before deleting stale destination files."
 
-        if [ "${{ inputs.aws-s3-sync-dryrun }}" = "true" ]; then
-          SYNC_COMMAND="${SYNC_COMMAND} --dryrun"
-        fi
+          COPY_ARGS=(
+            "$DIST_FOLDER_NAME"
+            "$DEST_PATH"
+            "--recursive"
+            "--no-follow-symlinks"
+            "--exclude" ".DS_Store"
+            "--exclude" "**/.DS_Store"
+          )
 
-        echo $SYNC_COMMAND
-        $(echo $SYNC_COMMAND)
-
-        if [ $? -ne 0 ]; then
-          echo "Failed to sync folder to S3 bucket"
-          exit 1
-        fi
-
-    - name: Invalidate CloudFront cache
-      shell: bash
-      run: |
-        INVALIDATION_JSON=$(aws cloudfront create-invalidation --distribution-id ${{ inputs.aws-cloudfront-distribution-id }} --paths "/*")
-
-        if [ $? -ne 0 ]; then
-          echo "Failed to invalidate Cloudfront's cache"
-          exit 1
-        fi
-
-        INVALIDATION_ID=$(echo $INVALIDATION_JSON | jq -r '.Invalidation.Id')
-        INVALIDATION_STATUS=$(echo $INVALIDATION_JSON | jq -r '.Invalidation.Status')
-
-        echo "Waiting for CloudFront invalidation to complete..."
-
-        while [ "$INVALIDATION_STATUS" != "Completed" ]; do
-          INVALIDATION_JSON=$(aws cloudfront get-invalidation --distribution-id ${{ inputs.aws-cloudfront-distribution-id }} --id $INVALIDATION_ID)
-
-          if [ $? -ne 0 ]; then
-            echo "Failed to get Cloudfront's invalidation status"
-            exit 1
+          if [ -n "$AWS_S3_CACHE_CONTROL" ]; then
+            COPY_ARGS+=("--cache-control" "$AWS_S3_CACHE_CONTROL")
           fi
 
-          INVALIDATION_STATUS=$(echo $INVALIDATION_JSON | jq -r '.Invalidation.Status')
+          if [ "$AWS_S3_SYNC_DRYRUN" = "true" ]; then
+            COPY_ARGS+=("--dryrun")
+          fi
 
-          echo "Status: $INVALIDATION_STATUS"
-          sleep 5
-        done
+          print_command aws s3 cp "${COPY_ARGS[@]}"
+          aws s3 cp "${COPY_ARGS[@]}"
+        fi
+
+        SYNC_ARGS=(
+          "$DIST_FOLDER_NAME"
+          "$DEST_PATH"
+          "--no-follow-symlinks"
+          "--exclude" ".DS_Store"
+          "--exclude" "**/.DS_Store"
+        )
+
+        if [ -n "$AWS_S3_CACHE_CONTROL" ]; then
+          SYNC_ARGS+=("--cache-control" "$AWS_S3_CACHE_CONTROL")
+        fi
+
+        if [ "$AWS_S3_SYNC_DELETE" = "true" ] || [ "$AWS_S3_SYNC_DELETE_ALL" = "true" ]; then
+          SYNC_ARGS+=("--delete")
+        fi
+
+        if [ "$AWS_S3_SYNC_DRYRUN" = "true" ]; then
+          SYNC_ARGS+=("--dryrun")
+        fi
+
+        print_command aws s3 sync "${SYNC_ARGS[@]}"
+        aws s3 sync "${SYNC_ARGS[@]}"
+
+    - name: Invalidate CloudFront cache
+      if: ${{ inputs.aws-s3-sync-dryrun != 'true' }}
+      shell: bash
+      env:
+        AWS_CLOUDFRONT_DISTRIBUTION_ID: ${{ inputs.aws-cloudfront-distribution-id }}
+      run: |
+        set -euo pipefail
+
+        echo "Creating CloudFront invalidation."
+        INVALIDATION_ID=$(aws cloudfront create-invalidation \
+          --distribution-id "$AWS_CLOUDFRONT_DISTRIBUTION_ID" \
+          --paths "/*" \
+          --query 'Invalidation.Id' \
+          --output text)
+
+        if [ -z "$INVALIDATION_ID" ] || [ "$INVALIDATION_ID" = "None" ]; then
+          echo "::error::Failed to create CloudFront invalidation."
+          exit 1
+        fi
+
+        echo "Waiting for CloudFront invalidation '$INVALIDATION_ID' to complete."
+        aws cloudfront wait invalidation-completed \
+          --distribution-id "$AWS_CLOUDFRONT_DISTRIBUTION_ID" \
+          --id "$INVALIDATION_ID"
+
+        echo "CloudFront invalidation '$INVALIDATION_ID' completed."
 
     - if: ${{ inputs.notify-slack-on-failure == 'true' && failure() }}
       name: Notify Slack
       uses: flybits/actions/frontend/slack/job-failure@main
       with:
         bot-token: ${{ inputs.slack-bot-token }}
-        message: '🤔 AWS sync failed'
+        message: "🤔 AWS sync failed"
         thread-ts: ${{ inputs.slack-ts }}
         web-app-name: ${{ inputs.web-app-name }}
