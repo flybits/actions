@@ -17,16 +17,16 @@ inputs:
     required: false
 
   message:
-    description: 'The message to post to Slack'
+    description: 'The message to post to Slack. Single line, at most 4,000 characters, and cannot contain ", \, <, >, or |.'
     default: '${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}'
     required: false
 
-  update-ts:
-    description: 'The timestamp of the Slack message to update'
+  thread-ts:
+    description: 'The timestamp of the parent Slack message to reply to'
     required: false
 
-  thread-ts:
-    description: 'The timestamp of the parent message to reply to'
+  update-ts:
+    description: 'The timestamp of an existing Slack message to update'
     required: false
 
   web-app-name:
@@ -37,18 +37,91 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: Validate inputs
+    - name: Validate Github Actions' inputs
       shell: bash
+      env:
+        BOT_TOKEN: ${{ inputs.bot-token }}
+        CHANNEL_ID: ${{ inputs.channel-id }}
+        MESSAGE: ${{ inputs.message }}
+        THREAD_TS: ${{ inputs.thread-ts }}
+        UPDATE_TS: ${{ inputs.update-ts }}
       run: |
-        [[ "${{ inputs.bot-token }}" ]] || { echo "bot-token input is empty"; exit 1; }
+        set -euo pipefail
 
-    - name: Notify Slack
-      uses: 'slackapi/slack-github-action@v2.1.1'
+        missing=()
+        [ -n "$BOT_TOKEN" ] || missing+=("bot-token")
+        [ -n "$CHANNEL_ID" ] || missing+=("channel-id")
+        [ -n "$MESSAGE" ] || missing+=("message")
+
+        if [ "${#missing[@]}" -gt 0 ]; then
+          echo "::error::Missing required action inputs: ${missing[*]}."
+          exit 1
+        fi
+
+        if [ "${#BOT_TOKEN}" -gt 200 ] || [[ ! "$BOT_TOKEN" =~ ^xox[bp]-[A-Za-z0-9-]{20,}$ ]]; then
+          echo "::error::bot-token must be a Slack bot (xoxb-) or user (xoxp-) token."
+          exit 1
+        fi
+        printf '::add-mask::%s\n' "$BOT_TOKEN"
+
+        if [[ ! "$CHANNEL_ID" =~ ^[CGD][A-Z0-9]{8,32}$ ]]; then
+          echo "::error::channel-id must be a Slack conversation ID starting with C, G, or D."
+          exit 1
+        fi
+
+        if [ "${#MESSAGE}" -gt 4000 ]; then
+          echo "::error::message exceeds 4,000 characters."
+          exit 1
+        fi
+
+        if [[ "$MESSAGE" == *$'\n'* || "$MESSAGE" == *$'\r'* || "$MESSAGE" == *'"'* || "$MESSAGE" == *'\'* || "$MESSAGE" == *'<'* || "$MESSAGE" == *'>'* || "$MESSAGE" == *'|'* ]]; then
+          echo "::error::message must be a single line and cannot contain quotes, backslashes, or <, >, or |."
+          exit 1
+        fi
+
+        validate_timestamp() {
+          local input_name="$1"
+          local value="$2"
+
+          if [ -z "$value" ]; then
+            return
+          fi
+
+          if [[ ! "$value" =~ ^[0-9]{10}\.[0-9]{1,6}$ ]]; then
+            echo "::error::${input_name} must be a Slack timestamp like 1405894322.002768."
+            exit 1
+          fi
+        }
+
+        validate_timestamp "thread-ts" "$THREAD_TS"
+        validate_timestamp "update-ts" "$UPDATE_TS"
+
+        if [ -n "$THREAD_TS" ] && [ -n "$UPDATE_TS" ]; then
+          echo "::error::thread-ts and update-ts cannot be used together."
+          exit 1
+        fi
+
+    - name: Post Slack message
+      if: ${{ inputs.update-ts == '' }}
+      uses: slackapi/slack-github-action@v4.0.0
       with:
         errors: true
-        method: 'chat.postMessage'
+        method: chat.postMessage
+        payload: |
+          channel: ${{ inputs.channel-id }}
+          reply_broadcast: false
+          text: "<${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}|${{ inputs.message }}>"
+          thread_ts: "${{ inputs.thread-ts }}"
+        token: ${{ inputs.bot-token }}
+
+    - name: Update Slack message
+      if: ${{ inputs.update-ts != '' }}
+      uses: slackapi/slack-github-action@v4.0.0
+      with:
+        errors: true
+        method: chat.update
         payload: |
           channel: ${{ inputs.channel-id }}
           text: "<${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}|${{ inputs.message }}>"
-          thread_ts: "${{ inputs.thread-ts }}"
+          ts: "${{ inputs.update-ts }}"
         token: ${{ inputs.bot-token }}

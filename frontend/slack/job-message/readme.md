@@ -1,105 +1,92 @@
-# flybits/actions/frontend/slack/job-message
+# Slack job message
 
-This action publishes a message to Slack when the job either succeeds or fails.
+> Post a Slack message for a workflow run
 
-- Usage
-  - [Inputs](#Inputs)
-  - [Outputs](#Outputs)
-- Examples
-  - [How to post a message](#Post-a-message)
-  - [How to post a thread reply](#Post-a-thread-reply)
-  - [How to post a thread reply on failure](#Post-a-thread-reply-on-failure)
-  - [How to post a thread reply on success](#Post-a-thread-reply-on-success)
+This GitHub Action posts a message to Slack. The message links to the current
+workflow run. Pass `thread-ts` to reply in a thread, or `update-ts` to replace
+an existing message.
 
-## Usage
-
-#### Inputs:
+## Quick start
 
 ```yaml
-- uses: flybits/actions/frontend/slack/job-message@main
-  with:
-    # The bot token to use for posting to Slack
-    # Required
-    bot-token:
+name: Notify Slack
 
-    # The Slack channel to post the message to
-    # Optional
-    # The default value is 'C9YA9JUKG' (The channel name is 'slack-api-tests')
-    channel-id:
+on:
+  push:
+    branches: [main]
 
-    # The name of the environment
-    # Optional
-    # The default value is 'Not Specified'
-    environment-name:
+jobs:
+  notify:
+    runs-on: ubuntu-latest
 
-    # The message to post to Slack
-    # Optional
-    # The default value is '${{ github.event.repository.html_url }}/actions/runs/${{ github.run_id }}
-    message:
-
-    # The timestamp of the Slack message to update
-    # Optional
-    # The default value is empty
-    update-ts:
-
-    # The timestamp of the parent message to reply to
-    # Optional
-    # The default value is empty
-    thread-ts:
-
-    # The name of web application
-    # Optional
-    # The default value is ${{ github.event.repository.name }}
-    web-app-name:
+    steps:
+      - name: Post a Slack message
+        uses: flybits/actions/frontend/slack/job-message@main
+        with:
+          bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          message: Hello world!
 ```
 
-#### Outputs:
+## Inputs
 
-This job does not generate any outputs.
+| Input | Required | Default | Purpose |
+| --- | --- | --- | --- |
+| `bot-token` | Yes | — | Slack bot (`xoxb-`) or user (`xoxp-`) token with `chat:write`. |
+| `channel-id` | No | `C9YA9JUKG` | Slack conversation ID. Public channels start with C, private channels with G, and direct messages with D. |
+| `environment-name` | No | `Not Specified` | Name of the environment. |
+| `message` | No | Workflow run URL | Link text for this workflow run. |
+| `thread-ts` | No | — | Timestamp of the parent message to reply to. |
+| `update-ts` | No | — | Timestamp of an existing message to replace. |
+| `web-app-name` | No | Repository name | Name of the web application. |
 
-## Examples
+## Common options
 
-#### Post a message
+### Reply in a thread
 
 ```yaml
-- uses: flybits/actions/frontend/slack/job-message@main
-  with:
-    bot-token: ${{ secrets.slack-bot-token }}
-    message: 'Hello world!'
+with:
+  bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+  message: Hello world!
+  thread-ts: ${{ needs.deploy.outputs.ts }}
 ```
 
-#### Post a thread reply
-
-```yaml
-- uses: flybits/actions/frontend/slack/job-message@main
-  with:
-    bot-token: ${{ secrets.slack-bot-token }}
-    message: 'Hello world!'
-    thread-ts: ${{ needs.<job-id>.outputs.ts }}
-```
-
-#### Post a thread reply on failure
+### Reply when a job fails
 
 ```yaml
 - if: ${{ failure() }}
   name: Send failure message to Slack
   uses: flybits/actions/frontend/slack/job-message@main
   with:
-    bot-token: ${{ secrets.slack-bot-token }}
-    message: 'Job succeeded!'
-    thread-ts: ${{ needs.<job-id>.outputs.ts }}
-    web-app-name: 'Front-End Web App'
+    bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+    message: Job failed!
+    thread-ts: ${{ needs.deploy.outputs.ts }}
 ```
 
-#### Post a thread reply on success
+### Reply when a job succeeds
 
 ```yaml
 - if: ${{ success() }}
   name: Send success message to Slack
   uses: flybits/actions/frontend/slack/job-message@main
   with:
-    bot-token: ${{ secrets.slack-bot-token }}
-    message: 'Job failed!'
-    thread-ts: ${{ needs.<job-id>.outputs.ts }}
-    web-app-name: 'Front-End Web App'
+    bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+    message: Job succeeded!
+    thread-ts: ${{ needs.deploy.outputs.ts }}
 ```
+
+### Update an existing message
+
+```yaml
+with:
+  bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+  message: Job finished!
+  update-ts: "1405894322.002768"
+```
+
+## Notes
+
+- Pass `bot-token` from a GitHub secret. It must be a Slack bot (`xoxb-`) or user (`xoxp-`) token.
+- `channel-id` must be a conversation ID, not a channel name. The default channel is `slack-api-tests`.
+- `message` must be a single line of at most 4,000 characters and cannot contain `"`, `\`, `<`, `>`, or `|`.
+- `thread-ts` and `update-ts` cannot be used together. Each timestamp looks like `1405894322.002768`.
+- Setting `update-ts` replaces that message. Otherwise the action posts a new message.
