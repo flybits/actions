@@ -29,8 +29,13 @@ runs:
         go-version-file: '${{ inputs.path }}/go.mod'
         check-latest: true
     - name: Configure git for private modules
-      run: git config --global url."https://${{inputs.deployment_token}}@github.com".insteadOf "https://github.com"
+      env:
+        DEPLOYMENT_TOKEN: ${{ inputs.deployment_token }}
       shell: bash
+      run: |
+        git config --global url."https://x-access-token:${DEPLOYMENT_TOKEN}@github.com/".insteadOf "https://github.com/"
+        echo "GOPRIVATE=github.com/flybits" >> "$GITHUB_ENV"
+        echo "GONOSUMDB=github.com/flybits" >> "$GITHUB_ENV"
     - name: Run Go version
       run: go version
       shell: bash
